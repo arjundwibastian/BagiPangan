@@ -1,0 +1,136 @@
+{
+  "info": {
+    "name": "Zero Hunger - Request Service",
+    "description": "Request and Food Service flow. Request Service validates the recipient through UserService/GetUser over gRPC. Food Service then fetches the request through RequestService/GetRequest to search nearby listings.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "User Service - Setup recipient",
+      "item": [
+        {
+          "name": "Register Recipient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.data && body.data.user_id) pm.environment.set('user_id', body.data.user_id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{recipient_name}}\",\n  \"email\": \"{{recipient_email}}\",\n  \"phone\": \"{{recipient_phone}}\",\n  \"password\": \"{{recipient_password}}\",\n  \"role\": \"recipient\"\n}"
+            },
+            "url": { "raw": "{{user_base_url}}/api/v1/auth/register", "host": ["{{user_base_url}}"], "path": ["api", "v1", "auth", "register"] }
+          }
+        },
+        {
+          "name": "Login Recipient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.data) {",
+                  "  pm.environment.set('access_token', body.data.access_token);",
+                  "  pm.environment.set('refresh_token', body.data.refresh_token);",
+                  "  if (body.data.user) pm.environment.set('user_id', body.data.user.user_id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{recipient_email}}\",\n  \"password\": \"{{recipient_password}}\"\n}"
+            },
+            "url": { "raw": "{{user_base_url}}/api/v1/auth/login", "host": ["{{user_base_url}}"], "path": ["api", "v1", "auth", "login"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Request Service",
+      "item": [
+        {
+          "name": "Create Food Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.data && body.data.request) pm.environment.set('request_id', body.data.request.request_id);",
+                  "pm.test('request created', function () { pm.expect(pm.response.code).to.eql(201); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": -6.200000,\n  \"longitude\": 106.816666,\n  \"radius_km\": 5\n}"
+            },
+            "url": { "raw": "{{request_base_url}}/api/v1/food-requests", "host": ["{{request_base_url}}"], "path": ["api", "v1", "food-requests"] }
+          }
+        },
+        {
+          "name": "Get Food Request",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{request_base_url}}/api/v1/food-requests/{{request_id}}", "host": ["{{request_base_url}}"], "path": ["api", "v1", "food-requests", "{{request_id}}"] }
+          }
+        },
+        {
+          "name": "List My Food Requests",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{request_base_url}}/api/v1/users/{{user_id}}/food-requests", "host": ["{{request_base_url}}"], "path": ["api", "v1", "users", "{{user_id}}", "food-requests"] }
+          }
+        },
+        {
+          "name": "Cancel Food Request",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{request_base_url}}/api/v1/food-requests/{{request_id}}/cancel", "host": ["{{request_base_url}}"], "path": ["api", "v1", "food-requests", "{{request_id}}", "cancel"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Food Service - Nearby matching",
+      "item": [
+        {
+          "name": "Search Nearby Food For Request",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{food_base_url}}/api/v1/food-listings/nearby?request_id={{request_id}}", "host": ["{{food_base_url}}"], "path": ["api", "v1", "food-listings", "nearby"], "query": [{ "key": "request_id", "value": "{{request_id}}" }] }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package review.v1;
+
+option go_package = "github.com/zero-hunger/contracts/gen/review/v1;reviewv1";
+
+import "google/protobuf/timestamp.proto";
+
+service ReviewService {
+  rpc GetClaimReview(GetClaimReviewRequest) returns (GetClaimReviewResponse);
+  rpc GetUserRatingSummary(GetUserRatingSummaryRequest) returns (GetUserRatingSummaryResponse);
+}
+
+enum ReportReason {
+  REPORT_REASON_UNSPECIFIED = 0;
+  REPORT_REASON_FOOD_QUALITY = 1;
+  REPORT_REASON_WRONG_FOOD = 2;
+  REPORT_REASON_EXPIRED_FOOD = 3;
+  REPORT_REASON_QUANTITY_MISMATCH = 4;
+  REPORT_REASON_UNSAFE_FOOD = 5;
+  REPORT_REASON_OTHER = 6;
+}
+
+enum ReportStatus {
+  REPORT_STATUS_UNSPECIFIED = 0;
+  REPORT_STATUS_WAITING_FOR_REVIEW = 1;
+  REPORT_STATUS_REVIEWED = 2;
+}
+
+message Rating {
+  string rating_id = 1;
+  string user_id = 2;
+  string claim_id = 3;
+  int32 rating = 4;
+  string comment = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message FoodReport {
+  string report_id = 1;
+  string user_id = 2;
+  string claim_id = 3;
+  ReportReason reason = 4;
+  string description = 5;
+  ReportStatus status = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message GetClaimReviewRequest { string claim_id = 1; }
+message GetClaimReviewResponse { Rating rating = 1; FoodReport report = 2; }
+
+message GetUserRatingSummaryRequest { string user_id = 1; }
+message GetUserRatingSummaryResponse {
+  string user_id = 1;
+  double average_rating = 2;
+  int64 total_ratings = 3;
+}

@@ -1,0 +1,45 @@
+openapi: 3.0.3
+info: { title: Zero Hunger Food Service, version: 1.0.0 }
+servers: [{ url: http://localhost:8082 }]
+paths:
+  /api/v1/food-listings:
+    post:
+      summary: Create food listing
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/FoodListingRequest' } } } }
+      responses: { '201': { $ref: '#/components/responses/Success' }, '400': { $ref: '#/components/responses/Error' } }
+    get:
+      summary: List active food listings
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /api/v1/food-listings/nearby:
+    get:
+      summary: Search food listings by PostGIS radius
+      parameters:
+        - { in: query, name: latitude, required: true, schema: { type: number, format: double, minimum: -90, maximum: 90 } }
+        - { in: query, name: longitude, required: true, schema: { type: number, format: double, minimum: -180, maximum: 180 } }
+        - { in: query, name: radius_km, required: true, schema: { type: number, format: double, exclusiveMinimum: 0 } }
+      responses: { '200': { $ref: '#/components/responses/Success' }, '400': { $ref: '#/components/responses/Error' } }
+  /api/v1/food-listings/{food_listing_id}:
+    parameters: [{ in: path, name: food_listing_id, required: true, schema: { type: string, format: uuid } }]
+    get: { summary: Get listing detail, responses: { '200': { $ref: '#/components/responses/Success' }, '404': { $ref: '#/components/responses/Error' } } }
+    patch: { summary: Update owned listing, security: [{ bearerAuth: [] }], responses: { '200': { $ref: '#/components/responses/Success' }, '403': { $ref: '#/components/responses/Error' } } }
+    delete: { summary: Expire listing, security: [{ bearerAuth: [] }], responses: { '200': { $ref: '#/components/responses/Success' } } }
+components:
+  securitySchemes: { bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT } }
+  schemas:
+    FoodListingRequest:
+      type: object
+      required: [title, latitude, longitude, food_type, quantity, available_from, available_until]
+      properties:
+        title: { type: string }
+        description: { type: string }
+        latitude: { type: number, format: double }
+        longitude: { type: number, format: double }
+        food_type: { type: string, enum: [cooked_food, raw_food, bakery] }
+        quantity: { type: integer, minimum: 0 }
+        available_from: { type: string, format: date-time }
+        available_until: { type: string, format: date-time }
+  responses:
+    Success: { description: Envelope response }
+    Error: { description: Error envelope }

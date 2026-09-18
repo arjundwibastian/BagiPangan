@@ -1,0 +1,72 @@
+services:
+  user-service:
+    image: ghcr.io/zero-hunger/user-service:${USER_SERVICE_VERSION:-dev}
+    environment:
+      SERVER_PORT: "8081"
+      GRPC_PORT: "50051"
+      DATABASE_URL: ${USER_DATABASE_URL:?set USER_DATABASE_URL to the host PostgreSQL URL}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-development}
+      JWT_ACCESS_TTL: 1h
+      JWT_REFRESH_TTL: 168h
+    ports:
+      - "8081:8081"
+      - "50051:50051"
+
+  request-service:
+    image: ghcr.io/zero-hunger/request-service:${REQUEST_SERVICE_VERSION:-dev}
+    environment:
+      SERVER_PORT: "8083"
+      GRPC_PORT: "50053"
+      DATABASE_URL: ${REQUEST_DATABASE_URL:?set REQUEST_DATABASE_URL to the host PostgreSQL URL}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-development}
+      REQUEST_TTL: 24h
+      USER_SERVICE_GRPC_ADDRESS: user-service:50051
+      FOOD_SERVICE_GRPC_ADDRESS: food-service:50052
+    ports:
+      - "8083:8083"
+      - "50053:50053"
+    depends_on:
+      - user-service
+
+  food-service:
+    image: ghcr.io/zero-hunger/food-service:${FOOD_SERVICE_VERSION:-dev}
+    environment:
+      PORT: "8082"
+      GRPC_PORT: "50052"
+      DB_HOST: ${FOOD_DB_HOST:-host.docker.internal}
+      DB_PORT: ${FOOD_DB_PORT:-5434}
+      DB_USER: ${FOOD_DB_USER:-user}
+      DB_PASSWORD: ${FOOD_DB_PASSWORD:-password}
+      DB_NAME: ${FOOD_DB_NAME:-food_db}
+      DB_SSLMODE: ${FOOD_DB_SSLMODE:-disable}
+      USER_SERVICE_GRPC_ADDRESS: user-service:50051
+      REQUEST_SERVICE_GRPC_ADDRESS: request-service:50053
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-development}
+    ports:
+      - "8082:8082"
+      - "50052:50052"
+    depends_on:
+      - user-service
+      - request-service
+
+  claim-service:
+    image: ghcr.io/zero-hunger/claim-service:${CLAIM_SERVICE_VERSION:-dev}
+    environment:
+      PORT: "8084"
+      DB_HOST: ${CLAIM_DB_HOST:-host.docker.internal}
+      DB_PORT: ${CLAIM_DB_PORT:-5436}
+      DB_USER: ${CLAIM_DB_USER:-user}
+      DB_PASSWORD: ${CLAIM_DB_PASSWORD:-password}
+      DB_NAME: ${CLAIM_DB_NAME:-claim_db}
+      DB_SSLMODE: ${CLAIM_DB_SSLMODE:-disable}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-development}
+      RESEND_API_KEY: ${RESEND_API_KEY:?set RESEND_API_KEY}
+      USER_SERVICE_GRPC_ADDRESS: user-service:50051
+      FOOD_SERVICE_GRPC_ADDRESS: food-service:50052
+      REQUEST_SERVICE_GRPC_ADDRESS: request-service:50053
+    ports:
+      - "8084:8084"
+    depends_on:
+      - user-service
+      - request-service
+      - food-service

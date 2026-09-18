@@ -1,0 +1,109 @@
+openapi: 3.0.3
+info:
+  title: Zero Hunger Request Service
+  version: 1.0.0
+servers:
+  - url: http://localhost:8083
+paths:
+  /api/v1/food-requests:
+    post:
+      summary: Create food request
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateRequest' }
+      responses:
+        '201': { $ref: '#/components/responses/Created' }
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /api/v1/food-requests/{request_id}:
+    get:
+      summary: Get request detail
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/RequestID' }]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/Error' }
+  /api/v1/users/{user_id}/food-requests:
+    get:
+      summary: List a user's food requests
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/UserID' }]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Error' }
+  /api/v1/food-requests/{request_id}/cancel:
+    patch:
+      summary: Cancel an owned food request
+      security: [{ bearerAuth: [] }]
+      parameters: [{ $ref: '#/components/parameters/RequestID' }]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '409': { $ref: '#/components/responses/Error' }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    RequestID:
+      name: request_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    UserID:
+      name: user_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  schemas:
+    CreateRequest:
+      type: object
+      required: [latitude, longitude, radius_km]
+      properties:
+        latitude: { type: number, format: double, minimum: -90, maximum: 90 }
+        longitude: { type: number, format: double, minimum: -180, maximum: 180 }
+        radius_km: { type: number, format: double, exclusiveMinimum: 0 }
+    FoodRequest:
+      type: object
+      properties:
+        request_id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        latitude: { type: number, format: double }
+        longitude: { type: number, format: double }
+        radius_km: { type: number, format: double }
+        status: { type: string, enum: [searching, claimed, completed, cancelled, expired] }
+        claim_id: { type: string, format: uuid, nullable: true }
+        expires_at: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    CreateResponse:
+      type: object
+      properties:
+        request: { $ref: '#/components/schemas/FoodRequest' }
+    Envelope:
+      type: object
+      properties:
+        rc: { type: string, example: '00' }
+        message: { type: string }
+        data: { nullable: true }
+  responses:
+    Created:
+      description: Request created
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              rc: { type: string }
+              message: { type: string }
+              data: { $ref: '#/components/schemas/CreateResponse' }
+    Success:
+      description: Envelope response
+      content:
+        application/json: { schema: { $ref: '#/components/schemas/Envelope' } }
+    Error:
+      description: Error envelope
+      content:
+        application/json: { schema: { $ref: '#/components/schemas/Envelope' } }

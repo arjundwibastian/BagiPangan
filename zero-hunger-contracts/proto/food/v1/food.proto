@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package food.v1;
+
+option go_package = "github.com/zero-hunger/contracts/gen/food/v1;foodv1";
+
+import "common/v1/common.proto";
+import "google/protobuf/timestamp.proto";
+
+service FoodService {
+  rpc GetFoodListing(GetFoodListingRequest) returns (GetFoodListingResponse);
+  rpc SearchNearbyFoodListings(SearchNearbyFoodListingsRequest) returns (SearchNearbyFoodListingsResponse);
+  rpc ReserveFoodQuantity(ReserveFoodQuantityRequest) returns (ReserveFoodQuantityResponse);
+  rpc ReleaseFoodQuantity(ReleaseFoodQuantityRequest) returns (ReleaseFoodQuantityResponse);
+}
+
+enum FoodCategory {
+  FOOD_CATEGORY_UNSPECIFIED = 0;
+  FOOD_CATEGORY_COOKED_FOOD = 1;
+  FOOD_CATEGORY_RAW_FOOD = 2;
+  FOOD_CATEGORY_BAKERY = 3;
+}
+
+enum ListingStatus {
+  LISTING_STATUS_UNSPECIFIED = 0;
+  LISTING_STATUS_AVAILABLE = 1;
+  LISTING_STATUS_CLAIMED = 2;
+  LISTING_STATUS_EXPIRED = 3;
+}
+
+message FoodListing {
+    string food_listing_id = 1;
+      string user_id = 2;
+      string title = 3;
+      optional string description = 4; // nullable column
+
+      double latitude = 5;
+      double longitude = 6;
+
+      FoodCategory food_type = 7;
+      int32 quantity = 8;
+      google.protobuf.Timestamp available_from = 9;
+      google.protobuf.Timestamp available_until = 10;
+      ListingStatus status = 11;
+      google.protobuf.Timestamp created_at = 13;
+      google.protobuf.Timestamp updated_at = 14;
+}
+
+message GetFoodListingRequest { string food_listing_id = 1; }
+message GetFoodListingResponse { repeated FoodListing food_listing = 1; }
+
+message SearchNearbyFoodListingsRequest {
+  common.v1.GeoPoint location = 1;
+  double radius_km = 2;
+}
+message SearchNearbyFoodListingsResponse { repeated FoodListing food_listings = 1; }
+
+message ReserveFoodQuantityRequest {
+  string food_listing_id = 1;
+  string claim_id = 2;
+  int32 quantity = 3;
+}
+message ReserveFoodQuantityResponse {
+  string food_listing_id = 1;
+  int32 remaining_quantity = 2;
+  ListingStatus status = 3;
+}
+
+message ReleaseFoodQuantityRequest {
+  string food_listing_id = 1;
+  string claim_id = 2;
+  int32 quantity = 3;
+}
+message ReleaseFoodQuantityResponse {
+  string food_listing_id = 1;
+  int32 quantity = 2;
+  ListingStatus status = 3;
+}

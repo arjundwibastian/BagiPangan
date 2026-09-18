@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package request.v1;
+
+option go_package = "github.com/zero-hunger/contracts/gen/request/v1;requestv1";
+
+import "google/protobuf/timestamp.proto";
+
+service RequestService {
+  rpc CreateRequest(CreateRequestRequest) returns (CreateRequestResponse);
+  rpc GetRequest(GetRequestRequest) returns (GetRequestResponse);
+  rpc ListRequestsByUser(ListRequestsByUserRequest) returns (ListRequestsByUserResponse);
+  rpc CancelRequest(CancelRequestRequest) returns (CancelRequestResponse);
+  rpc MarkRequestClaimed(MarkRequestClaimedRequest) returns (MarkRequestClaimedResponse);
+  rpc MarkRequestSearching(MarkRequestSearchingRequest) returns (MarkRequestSearchingResponse);
+  rpc MarkRequestCompleted(MarkRequestCompletedRequest) returns (MarkRequestCompletedResponse);
+}
+
+enum RequestStatus {
+  REQUEST_STATUS_UNSPECIFIED = 0;
+  REQUEST_STATUS_SEARCHING = 1;
+  REQUEST_STATUS_CLAIMED = 2;
+  REQUEST_STATUS_COMPLETED = 3;
+  REQUEST_STATUS_CANCELLED = 4;
+  REQUEST_STATUS_EXPIRED = 5;
+}
+
+message FoodRequest {
+  string request_id = 1;
+  string user_id = 2;
+
+  double latitude = 3;
+  double longitude = 4;
+
+  double radius_km = 5;
+  RequestStatus status = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+message CreateRequestRequest {
+  string user_id = 1;
+  double latitude = 2;
+  double longitude = 3;
+  double radius_km = 4;
+}
+message CreateRequestResponse { FoodRequest request = 1; }
+message GetRequestRequest { string request_id = 1; }
+message GetRequestResponse { FoodRequest request = 1; }
+message ListRequestsByUserRequest { string user_id = 1; }
+message ListRequestsByUserResponse { repeated FoodRequest requests = 1; }
+message CancelRequestRequest { string request_id = 1; string user_id = 2; }
+message CancelRequestResponse { FoodRequest request = 1; }
+
+message MarkRequestClaimedRequest { string request_id = 1; string claim_id = 2; }
+message MarkRequestClaimedResponse { FoodRequest request = 1; }
+
+message MarkRequestSearchingRequest { string request_id = 1; string claim_id = 2; }
+message MarkRequestSearchingResponse { FoodRequest request = 1; }
+
+message MarkRequestCompletedRequest { string request_id = 1; string claim_id = 2; }
+message MarkRequestCompletedResponse { FoodRequest request = 1; }

@@ -1,0 +1,287 @@
+basePath: /api/v1
+definitions:
+  domain.ClaimStatus:
+    enum:
+    - waiting_for_pickup
+    - picked_up
+    - cancelled
+    type: string
+    x-enum-varnames:
+    - StatusWaitingForPickup
+    - StatusPickedUp
+    - StatusCancelled
+  domain.FoodClaim:
+    properties:
+      claim_code:
+        type: string
+      claim_id:
+        type: string
+      claimed_at:
+        type: string
+      claimed_quantity:
+        type: integer
+      code_expires_at:
+        type: string
+      created_at:
+        type: string
+      food_listing_id:
+        type: string
+      request_id:
+        type: string
+      status:
+        $ref: '#/definitions/domain.ClaimStatus'
+      updated_at:
+        type: string
+    type: object
+  dto.CreateClaimRequest:
+    properties:
+      claimed_quantity:
+        type: integer
+      food_listing_id:
+        type: string
+      request_id:
+        type: string
+    type: object
+  dto.HandlerResponse:
+    properties:
+      responseCode:
+        type: string
+      responseData: {}
+      responseMessage:
+        type: string
+    type: object
+  dto.VerifyPickupRequest:
+    properties:
+      claim_code:
+        type: string
+    type: object
+host: localhost:8084
+info:
+  contact: {}
+  description: Food claim creation, cancellation, and pickup verification API.
+  title: Zero Hunger Claim Service API
+  version: "1.0"
+paths:
+  /claims:
+    post:
+      consumes:
+      - application/json
+      description: Claim food from a listing for a specific food request
+      operationId: create-claim
+      parameters:
+      - description: Claim information
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateClaimRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.HandlerResponse'
+            - properties:
+                responseData:
+                  $ref: '#/definitions/domain.FoodClaim'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a food claim
+      tags:
+      - Claims
+  /claims/{claim_id}:
+    get:
+      description: Return a claim belonging to the authenticated user
+      operationId: get-claim
+      parameters:
+      - description: Claim ID
+        format: uuid
+        in: path
+        name: claim_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.HandlerResponse'
+            - properties:
+                responseData:
+                  $ref: '#/definitions/domain.FoodClaim'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: Get claim by ID
+      tags:
+      - Claims
+  /claims/{claim_id}/cancel:
+    post:
+      description: Cancel a food claim belonging to the authenticated user
+      operationId: cancel-claim
+      parameters:
+      - description: Claim ID
+        format: uuid
+        in: path
+        name: claim_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.HandlerResponse'
+            - properties:
+                responseData:
+                  $ref: '#/definitions/domain.FoodClaim'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: Cancel a claim
+      tags:
+      - Claims
+  /claims/{claim_id}/verify-pickup:
+    post:
+      consumes:
+      - application/json
+      description: Verify the claim pickup code and mark the claim as completed
+      operationId: verify-pickup-code
+      parameters:
+      - description: Claim ID
+        format: uuid
+        in: path
+        name: claim_id
+        required: true
+        type: string
+      - description: Pickup verification information
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.VerifyPickupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.HandlerResponse'
+            - properties:
+                responseData:
+                  $ref: '#/definitions/domain.FoodClaim'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: Verify a pickup code
+      tags:
+      - Claims
+schemes:
+- http
+securityDefinitions:
+  BearerAuth:
+    description: 'Enter the token using: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

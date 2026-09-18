@@ -1,0 +1,38 @@
+openapi: 3.0.3
+info: { title: Zero Hunger Review Service, version: 1.0.0 }
+servers: [{ url: http://localhost:8085 }]
+paths:
+  /api/v1/ratings:
+    post:
+      summary: Rate a completed claim
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateRating' } } } }
+      responses: { '201': { $ref: '#/components/responses/Success' }, '400': { $ref: '#/components/responses/Error' } }
+  /api/v1/users/{user_id}/rating-summary:
+    get: { summary: Get rating summary, responses: { '200': { $ref: '#/components/responses/Success' } } }
+  /api/v1/food-reports:
+    post:
+      summary: Report a claim
+      security: [{ bearerAuth: [] }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateReport' } } } }
+      responses: { '201': { $ref: '#/components/responses/Success' } }
+  /api/v1/food-reports/{report_id}/status:
+    patch: { summary: Update report status as admin, security: [{ bearerAuth: [] }], responses: { '200': { $ref: '#/components/responses/Success' }, '403': { $ref: '#/components/responses/Error' } } }
+components:
+  securitySchemes: { bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT } }
+  schemas:
+    CreateRating:
+      type: object
+      required: [claim_id, rating]
+      properties:
+        claim_id: { type: string, format: uuid }
+        rating: { type: integer, minimum: 1, maximum: 5 }
+        comment: { type: string }
+    CreateReport:
+      type: object
+      required: [claim_id, reason]
+      properties:
+        claim_id: { type: string, format: uuid }
+        reason: { type: string, maxLength: 255 }
+        description: { type: string }
+  responses: { Success: { description: Envelope response }, Error: { description: Error envelope } }

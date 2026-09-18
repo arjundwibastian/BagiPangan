@@ -1,0 +1,287 @@
+basePath: /api/v1
+definitions:
+  domain.FoodCategory:
+    enum:
+    - cooked_food
+    - raw_food
+    - bakery
+    type: string
+    x-enum-varnames:
+    - FoodCooked
+    - FoodRaw
+    - FoodBakery
+  domain.FoodListing:
+    properties:
+      available_from:
+        type: string
+      available_until:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      food_listing_id:
+        type: string
+      food_type:
+        $ref: '#/definitions/domain.FoodCategory'
+      latitude:
+        type: number
+      longitude:
+        type: number
+      quantity:
+        type: integer
+      status:
+        $ref: '#/definitions/domain.ListingStatus'
+      title:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  domain.ListingStatus:
+    enum:
+    - available
+    - claimed
+    - expired
+    type: string
+    x-enum-varnames:
+    - StatusAvailable
+    - StatusClaimed
+    - StatusExpired
+  dto.CreateFoodListingRequest:
+    properties:
+      available_from:
+        type: string
+      available_until:
+        type: string
+      description:
+        maxLength: 2000
+        type: string
+      food_type:
+        enum:
+        - cooked_food
+        - raw_food
+        - bakery
+        type: string
+      latitude:
+        maximum: 90
+        minimum: -90
+        type: number
+      longitude:
+        maximum: 180
+        minimum: -180
+        type: number
+      quantity:
+        minimum: 0
+        type: integer
+      title:
+        maxLength: 255
+        minLength: 3
+        type: string
+    required:
+    - available_from
+    - available_until
+    - food_type
+    - latitude
+    - longitude
+    - title
+    type: object
+  dto.HandlerResponse:
+    properties:
+      responseCode:
+        type: string
+      responseData: {}
+      responseMessage:
+        type: string
+    type: object
+host: localhost:8082
+info:
+  contact: {}
+  description: Food listing management and nearby food search API.
+  title: Zero Hunger Food Service API
+  version: "1.0"
+paths:
+  /food-listings:
+    get:
+      description: Return all currently active food listings
+      operationId: get-active-food-listings
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.HandlerResponse'
+            - properties:
+                responseData:
+                  items:
+                    $ref: '#/definitions/domain.FoodListing'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: Get active food listings
+      tags:
+      - Food Listings
+    post:
+      consumes:
+      - application/json
+      description: Create a new food listing for the authenticated donor
+      operationId: create-food-listing
+      parameters:
+      - description: Food listing information
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateFoodListingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.HandlerResponse'
+            - properties:
+                responseData:
+                  $ref: '#/definitions/domain.FoodListing'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a food listing
+      tags:
+      - Food Listings
+  /food-listings/{food_listing_id}:
+    get:
+      description: Return the details of a specific food listing
+      operationId: get-food-listing-by-id
+      parameters:
+      - description: Food listing ID
+        format: uuid
+        in: path
+        name: food_listing_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.HandlerResponse'
+            - properties:
+                responseData:
+                  $ref: '#/definitions/domain.FoodListing'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: Get food listing by ID
+      tags:
+      - Food Listings
+  /food-listings/nearby:
+    get:
+      description: Find active food listings near the location of a food request
+      operationId: get-nearby-food-listings
+      parameters:
+      - description: Food request ID
+        format: uuid
+        in: query
+        name: request_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.HandlerResponse'
+            - properties:
+                responseData:
+                  items:
+                    $ref: '#/definitions/domain.FoodListing'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: Find nearby food listings
+      tags:
+      - Food Listings
+schemes:
+- http
+securityDefinitions:
+  BearerAuth:
+    description: 'Enter the token using: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
