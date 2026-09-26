@@ -18,7 +18,10 @@ import (
 )
 
 func main() {
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 	ctx := context.Background()
 	db, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {

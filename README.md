@@ -73,13 +73,4 @@ docker compose up --build
 
 Services will be on `http://localhost:8081` (user), `:8082` (food), `:8083` (request), `:8084` (claim). Import `zero-hunger-infra/docs/Zero Hunger Local.postman_environment.json` and run `Zero Hunger E2E.postman_collection.json` in order.
 
-Or run from source, one terminal each:
-
-```bash
-cd ../zero-hunger-user-service && go run ./cmd/server
-cd ../zero-hunger-request-service && go run ./cmd/server
-cd ../zero-hunger-food-service && go run ./cmd/server
-cd ../zero-hunger-claim-service && go run ./cmd/server
-```
-
-Local gRPC addresses default to `localhost:50051/50052/50053`, in Compose they become `user-service:50051` etc.
+Services read configuration only from the process environment and do not load `.env` files themselves, so start them through Compose. Inside Compose gRPC addresses are `user-service:50051`, `request-service:50053`, and `food-service:50052`.

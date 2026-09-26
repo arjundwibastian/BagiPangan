@@ -1,11 +1,10 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"time"
-
-	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -17,17 +16,20 @@ type Config struct {
 	RequestTTL      time.Duration
 }
 
-func Load() Config {
-	// Load local .env when present. Existing process environment variables win.
-	_ = godotenv.Load()
-	return Config{
+func Load() (*Config, error) {
+	cfg := &Config{
 		ServerPort:      getenv("SERVER_PORT", "8083"),
 		GRPCPort:        getenv("GRPC_PORT", "50053"),
-		DatabaseURL:     getenv("DATABASE_URL", "postgres://user:password@localhost:5435/request_db?sslmode=disable"),
-		JWTSecret:       getenv("JWT_SECRET", "change-me-in-development"),
+		DatabaseURL:     os.Getenv("DATABASE_URL"),
+		JWTSecret:       os.Getenv("JWT_SECRET"),
 		UserServiceGRPC: getenv("USER_SERVICE_GRPC_ADDRESS", "localhost:50051"),
 		RequestTTL:      durationEnv("REQUEST_TTL", 24*time.Hour),
 	}
+
+	if err := cfg.validate(); err != nil {
+		return nil, err
+	}
+	return cfg, nil
 }
 
 func getenv(key, fallback string) string {
@@ -49,4 +51,17 @@ func durationEnv(key string, fallback time.Duration) time.Duration {
 		return parsed
 	}
 	return fallback
+}
+
+func (cfg *Config) validate() error {
+	required := map[string]string{
+		"DATABASE_URL": cfg.DatabaseURL,
+		"JWT_SECRET":   cfg.JWTSecret,
+	}
+	for key, value := range required {
+		if value == "" {
+			return fmt.Errorf("missing required environment variable: %s", key)
+		}
+	}
+	return nil
 }

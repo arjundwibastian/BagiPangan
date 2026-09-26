@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	userv1 "github.com/zero-hunger/contracts/gen/user/v1"
 	"github.com/zero-hunger/user-service/internal/config"
@@ -18,11 +17,10 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Printf(".env not loaded: %v", err)
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(err)
 	}
-
-	cfg := config.Load()
 	ctx := context.Background()
 	db, err := pgxpool.New(ctx, cfg.DatabaseURL)
 	if err != nil {

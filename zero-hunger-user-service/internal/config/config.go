@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -15,15 +16,20 @@ type Config struct {
 	RefreshTTL  time.Duration
 }
 
-func Load() Config {
-	return Config{
+func Load() (*Config, error) {
+	cfg := &Config{
 		ServerPort:  getenv("SERVER_PORT", "8081"),
 		GRPCPort:    getenv("GRPC_PORT", "50051"),
-		DatabaseURL: getenv("DATABASE_URL", "postgres://user:password@localhost:5433/user_db?sslmode=disable"),
-		JWTSecret:   getenv("JWT_SECRET", "change-me-in-development"),
+		DatabaseURL: os.Getenv("DATABASE_URL"),
+		JWTSecret:   os.Getenv("JWT_SECRET"),
 		AccessTTL:   durationEnv("JWT_ACCESS_TTL", time.Hour),
 		RefreshTTL:  durationEnv("JWT_REFRESH_TTL", 7*24*time.Hour),
 	}
+
+	if err := cfg.validate(); err != nil {
+		return nil, err
+	}
+	return cfg, nil
 }
 
 func getenv(key, fallback string) string {
@@ -45,4 +51,17 @@ func durationEnv(key string, fallback time.Duration) time.Duration {
 		return parsed
 	}
 	return fallback
+}
+
+func (cfg *Config) validate() error {
+	required := map[string]string{
+		"DATABASE_URL": cfg.DatabaseURL,
+		"JWT_SECRET":   cfg.JWTSecret,
+	}
+	for key, value := range required {
+		if value == "" {
+			return fmt.Errorf("missing required environment variable: %s", key)
+		}
+	}
+	return nil
 }
