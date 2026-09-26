@@ -9,7 +9,7 @@ This repository is intentionally separate from User Service. It will consume the
 ```bash
 cp .env.example .env
 go test ./...
-go run ./cmd
+go run ./cmd/server
 ```
 
 Apply `migrations/001_init.sql` to the external Food PostgreSQL database first. REST listens on `:8082`, gRPC on `:50052`, and local gRPC dependencies are User `localhost:50051` and Request `localhost:50053`.

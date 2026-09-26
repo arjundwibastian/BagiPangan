@@ -5,8 +5,8 @@
 
     { "name": "User Service", "type": "go", "request": "launch", "mode": "auto", "program": "${workspaceFolder}/../zero-hunger-user-service/cmd/server", "envFile": "${workspaceFolder}/../zero-hunger-user-service/.env" },
     { "name": "Request Service", "type": "go", "request": "launch", "mode": "auto", "program": "${workspaceFolder}/../zero-hunger-request-service/cmd/server", "envFile": "${workspaceFolder}/../zero-hunger-request-service/.env" },
-    { "name": "Food Service", "type": "go", "request": "launch", "mode": "auto", "program": "${workspaceFolder}/../zero-hunger-food-service/cmd", "envFile": "${workspaceFolder}/../zero-hunger-food-service/.env" },
-    { "name": "Claim Service", "type": "go", "request": "launch", "mode": "auto", "program": "${workspaceFolder}/../zero-hunger-claim-service/cmd", "envFile": "${workspaceFolder}/../zero-hunger-claim-service/.env" }
+    { "name": "Food Service", "type": "go", "request": "launch", "mode": "auto", "program": "${workspaceFolder}/../zero-hunger-food-service/cmd/server", "envFile": "${workspaceFolder}/../zero-hunger-food-service/.env" },
+    { "name": "Claim Service", "type": "go", "request": "launch", "mode": "auto", "program": "${workspaceFolder}/../zero-hunger-claim-service/cmd/server", "envFile": "${workspaceFolder}/../zero-hunger-claim-service/.env" }
   ],
   "compounds": [
     { "name": "Zero Hunger - all services", "configurations": ["User Service", "Request Service", "Food Service", "Claim Service"], "stopAll": true }

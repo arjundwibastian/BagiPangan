@@ -78,8 +78,8 @@ Or run from source, one terminal each:
 ```bash
 cd ../zero-hunger-user-service && go run ./cmd/server
 cd ../zero-hunger-request-service && go run ./cmd/server
-cd ../zero-hunger-food-service && go run ./cmd
-cd ../zero-hunger-claim-service && go run ./cmd
+cd ../zero-hunger-food-service && go run ./cmd/server
+cd ../zero-hunger-claim-service && go run ./cmd/server
 ```
 
 Local gRPC addresses default to `localhost:50051/50052/50053`, in Compose they become `user-service:50051` etc.

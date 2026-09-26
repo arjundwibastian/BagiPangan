@@ -8,7 +8,7 @@ Owns `food_claims`, pickup code verification, claim lifecycle, and quantity rese
 cp .env.example .env
 go mod tidy
 go test ./...
-go run ./cmd
+go run ./cmd/server
 ```
 
 The HTTP API listens on `:8084`. The service connects to User Service (`localhost:50051`), Food Service (`localhost:50052`), and Request Service (`localhost:50053`) over gRPC. Configure the external Claim PostgreSQL database in `.env`, then apply `migrations/001_init.sql` before starting the service.

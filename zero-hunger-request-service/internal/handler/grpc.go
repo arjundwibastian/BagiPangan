@@ -6,13 +6,13 @@ import (
 	"github.com/google/uuid"
 	requestv1 "github.com/zero-hunger/contracts/gen/request/v1"
 	"github.com/zero-hunger/request-service/internal/domain"
-	"github.com/zero-hunger/request-service/internal/service"
+	"github.com/zero-hunger/request-service/internal/usecase"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type RequestRPCServer struct {
 	requestv1.UnimplementedRequestServiceServer
-	Requests *service.RequestService
+	Requests *usecase.RequestService
 }
 
 func (s *RequestRPCServer) CreateRequest(ctx context.Context, in *requestv1.CreateRequestRequest) (*requestv1.CreateRequestResponse, error) {
@@ -20,7 +20,7 @@ func (s *RequestRPCServer) CreateRequest(ctx context.Context, in *requestv1.Crea
 	if err != nil {
 		return nil, domain.ErrInvalidInput
 	}
-	out, err := s.Requests.Create(ctx, service.CreateInput{
+	out, err := s.Requests.Create(ctx, usecase.CreateInput{
 		UserID:    userID,
 		Latitude:  in.GetLatitude(),
 		Longitude: in.GetLongitude(),

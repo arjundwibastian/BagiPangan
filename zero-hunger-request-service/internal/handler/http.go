@@ -7,15 +7,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/zero-hunger/request-service/internal/domain"
-	"github.com/zero-hunger/request-service/internal/service"
+	"github.com/zero-hunger/request-service/internal/usecase"
 )
 
 type HTTPHandler struct {
-	requests *service.RequestService
+	requests *usecase.RequestService
 	secret   string
 }
 
-func NewHTTPHandler(requests *service.RequestService, secret string) *HTTPHandler {
+func NewHTTPHandler(requests *usecase.RequestService, secret string) *HTTPHandler {
 	return &HTTPHandler{requests: requests, secret: secret}
 }
 
@@ -37,7 +37,7 @@ func (h *HTTPHandler) Create(c echo.Context) error {
 	if c.Bind(&in) != nil {
 		return Error(c, domain.ErrInvalidInput)
 	}
-	out, err := h.requests.Create(c.Request().Context(), service.CreateInput{UserID: userID, Latitude: in.Latitude, Longitude: in.Longitude, RadiusKM: in.RadiusKM})
+	out, err := h.requests.Create(c.Request().Context(), usecase.CreateInput{UserID: userID, Latitude: in.Latitude, Longitude: in.Longitude, RadiusKM: in.RadiusKM})
 	if err != nil {
 		return Error(c, err)
 	}

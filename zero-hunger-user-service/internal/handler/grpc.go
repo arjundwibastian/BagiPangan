@@ -6,12 +6,12 @@ import (
 	"github.com/google/uuid"
 	userv1 "github.com/zero-hunger/contracts/gen/user/v1"
 	"github.com/zero-hunger/user-service/internal/domain"
-	"github.com/zero-hunger/user-service/internal/service"
+	"github.com/zero-hunger/user-service/internal/usecase"
 )
 
 type UserRPCServer struct {
 	userv1.UnimplementedUserServiceServer
-	Users *service.UserService
+	Users *usecase.UserService
 }
 
 func (s *UserRPCServer) GetUser(ctx context.Context, in *userv1.GetUserRequest) (*userv1.GetUserResponse, error) {

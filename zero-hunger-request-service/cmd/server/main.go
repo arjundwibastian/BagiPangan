@@ -12,7 +12,7 @@ import (
 	"github.com/zero-hunger/request-service/internal/config"
 	"github.com/zero-hunger/request-service/internal/handler"
 	"github.com/zero-hunger/request-service/internal/repository"
-	"github.com/zero-hunger/request-service/internal/service"
+	"github.com/zero-hunger/request-service/internal/usecase"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -37,7 +37,7 @@ func main() {
 
 	logger := log.Default()
 	repo := repository.NewRequestRepository(db)
-	svc := service.NewRequestService(repo, handler.NewUserClient(userv1.NewUserServiceClient(userConn), logger), cfg.RequestTTL)
+	svc := usecase.NewRequestService(repo, handler.NewUserClient(userv1.NewUserServiceClient(userConn), logger), cfg.RequestTTL)
 	h := handler.NewHTTPHandler(svc, cfg.JWTSecret)
 	e := echo.New()
 	v1 := e.Group("/api/v1")

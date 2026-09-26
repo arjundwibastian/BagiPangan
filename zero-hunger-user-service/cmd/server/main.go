@@ -10,7 +10,7 @@ import (
 	"github.com/zero-hunger/user-service/internal/config"
 	"github.com/zero-hunger/user-service/internal/handler"
 	"github.com/zero-hunger/user-service/internal/repository"
-	"github.com/zero-hunger/user-service/internal/service"
+	"github.com/zero-hunger/user-service/internal/usecase"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -34,7 +34,7 @@ func main() {
 	}
 	users := repository.NewUserRepository(db)
 	tokens := repository.NewRefreshTokenRepository(db)
-	svc := service.NewUserService(users, tokens, cfg.JWTSecret, cfg.AccessTTL, cfg.RefreshTTL)
+	svc := usecase.NewUserService(users, tokens, cfg.JWTSecret, cfg.AccessTTL, cfg.RefreshTTL)
 	h := handler.NewHTTPHandler(svc)
 	e := echo.New()
 

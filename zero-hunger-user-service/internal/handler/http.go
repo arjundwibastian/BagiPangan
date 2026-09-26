@@ -7,12 +7,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/zero-hunger/user-service/internal/domain"
-	"github.com/zero-hunger/user-service/internal/service"
+	"github.com/zero-hunger/user-service/internal/usecase"
 )
 
-type HTTPHandler struct{ users *service.UserService }
+type HTTPHandler struct{ users *usecase.UserService }
 
-func NewHTTPHandler(users *service.UserService) *HTTPHandler { return &HTTPHandler{users: users} }
+func NewHTTPHandler(users *usecase.UserService) *HTTPHandler { return &HTTPHandler{users: users} }
 
 type registerRequest struct {
 	Name     string `json:"name"`
@@ -38,7 +38,7 @@ func (h *HTTPHandler) Register(c echo.Context) error {
 	if c.Bind(&in) != nil {
 		return Error(c, domain.ErrInvalidInput)
 	}
-	u, err := h.users.Register(c.Request().Context(), service.RegisterInput{Name: in.Name, Email: in.Email, Phone: in.Phone, Password: in.Password, Role: domain.Role(in.Role)})
+	u, err := h.users.Register(c.Request().Context(), usecase.RegisterInput{Name: in.Name, Email: in.Email, Phone: in.Phone, Password: in.Password, Role: domain.Role(in.Role)})
 	if err != nil {
 		return Error(c, err)
 	}

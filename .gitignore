@@ -1,3 +1,14 @@
+# Environment files
 **/.env
-**/.DS_Store
+**/.env.*
 !**/.env.example
+
+# macOS metadata
+**/.DS_Store
+
+# Go build artifacts
+bin/
+coverage.out
+*.test
+**/request-service
+tmp/

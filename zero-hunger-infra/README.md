@@ -27,8 +27,8 @@ Start in this order, each command in its own terminal:
 ```bash
 cd ../zero-hunger-user-service && go run ./cmd/server
 cd ../zero-hunger-request-service && go run ./cmd/server
-cd ../zero-hunger-food-service && go run ./cmd
-cd ../zero-hunger-claim-service && go run ./cmd
+cd ../zero-hunger-food-service && go run ./cmd/server
+cd ../zero-hunger-claim-service && go run ./cmd/server
 ```
 
 Verify that each process logs its HTTP listener and that gRPC clients connect without repeated errors. Then import `docs/Zero Hunger Local.postman_environment.json`, select it, and run `docs/Zero Hunger E2E.postman_collection.json` in order.
