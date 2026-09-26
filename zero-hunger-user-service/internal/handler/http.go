@@ -1,10 +1,11 @@
 package handler
 
 import (
-	"github.com/google/uuid"
-	"github.com/labstack/echo/v4"
 	"net/http"
 	"strings"
+
+	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
 	"github.com/zero-hunger/user-service/internal/domain"
 	"github.com/zero-hunger/user-service/internal/service"
 )
@@ -102,6 +103,10 @@ func (h *HTTPHandler) UpdateMe(c echo.Context) error {
 	return Success(c, 200, "profile updated successfully", u)
 }
 func (h *HTTPHandler) GetUser(c echo.Context) error {
+	_, _, err := h.authID(c)
+	if err != nil {
+		return Error(c, err)
+	}
 	id, err := uuid.Parse(c.Param("user_id"))
 	if err != nil {
 		return Error(c, domain.ErrInvalidInput)

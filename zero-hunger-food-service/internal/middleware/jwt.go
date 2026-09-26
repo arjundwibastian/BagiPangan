@@ -42,6 +42,9 @@ func (m *JWTMiddleware) Authenticate(next echo.HandlerFunc) echo.HandlerFunc {
 		}
 
 		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, jwt.ErrSignatureInvalid
+			}
 			return m.jwtSecret, nil
 		})
 		if err != nil || !token.Valid {
@@ -52,7 +55,14 @@ func (m *JWTMiddleware) Authenticate(next echo.HandlerFunc) echo.HandlerFunc {
 			})
 		}
 
-		claims := token.Claims.(jwt.MapClaims)
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			return c.JSON(http.StatusUnauthorized, dto.HandlerResponse{
+				ResponseCode:    "01",
+				ResponseMessage: "Error: Token is invalid",
+				ResponseData:    nil,
+			})
+		}
 		userID, ok := claims["sub"].(string)
 		if !ok {
 			return c.JSON(http.StatusUnauthorized, dto.HandlerResponse{

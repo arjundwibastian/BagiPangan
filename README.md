@@ -1,6 +1,6 @@
-# ZeroHunger — share extra food with people nearby
+# BagiPangan — share extra food with people nearby
 
-ZeroHunger connects people who have extra food with people who need it. Donors post what they have, recipients ask for what they need, and the system matches them through claims with a simple pickup code.
+BagiPangan (formerly ZeroHunger) connects people who have extra food with people who need it. Donors post what they have, recipients ask for what they need, and the system matches them through claims with a simple pickup code.
 
 What you get:
 
