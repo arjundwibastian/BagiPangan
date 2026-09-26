@@ -1,0 +1,6 @@
+.env
+.env.*
+!.env.example
+
+/request-service
+/tmp/

@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 
-	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
 	echoSwagger "github.com/swaggo/echo-swagger"
@@ -30,10 +29,6 @@ import (
 // @name Authorization
 // @description Enter the token using: Bearer {token}
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("warning: .env file not found")
-	}
-
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatal(err)

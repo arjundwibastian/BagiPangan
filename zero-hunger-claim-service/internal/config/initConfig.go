@@ -5,8 +5,6 @@ import (
 	"os"
 	"strconv"
 	"time"
-
-	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -43,8 +41,6 @@ type JWTConfig struct {
 }
 
 func Load() (*Config, error) {
-	// Load local .env when present. Existing process environment variables win.
-	_ = godotenv.Load()
 	appPort := os.Getenv("PORT")
 	if appPort == "" {
 		appPort = os.Getenv("SERVER_PORT")
