@@ -1,0 +1,23 @@
+# Version control
+.git
+.gitignore
+
+# Environment files and secrets (never send these into the build context)
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+
+# OS / editor junk
+**/.DS_Store
+**/.vscode
+
+# Build artifacts
+**/*.exe
+**/*.test
+**/bin/
+**/coverage.out
+
+# Docs and assets not needed inside images
+**/*.md
+project-flow.webp
