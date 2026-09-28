@@ -53,6 +53,7 @@ services:
       DB_PASSWORD: ${FOOD_DB_PASSWORD:?set FOOD_DB_PASSWORD}
       DB_NAME: ${FOOD_DB_NAME:?set FOOD_DB_NAME}
       DB_SSLMODE: ${FOOD_DB_SSLMODE:-disable}
+      DB_SSLROOTCERT: ${FOOD_DB_SSLROOTCERT:-}
       USER_SERVICE_GRPC_ADDRESS: user-service:50051
       REQUEST_SERVICE_GRPC_ADDRESS: request-service:50053
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
@@ -60,6 +61,10 @@ services:
       - "8082:8082"
     expose:
       - "50052"
+    # Drop your CA at zero-hunger-infra/certs/ and set FOOD_DB_SSLROOTCERT
+    # (e.g. /certs/prod-ca-2021.crt) when FOOD_DB_SSLMODE is verify-ca/verify-full.
+    volumes:
+      - ./certs:/certs:ro
     depends_on:
       - user-service
       - request-service
@@ -79,6 +84,7 @@ services:
       DB_PASSWORD: ${CLAIM_DB_PASSWORD:?set CLAIM_DB_PASSWORD}
       DB_NAME: ${CLAIM_DB_NAME:?set CLAIM_DB_NAME}
       DB_SSLMODE: ${CLAIM_DB_SSLMODE:-disable}
+      DB_SSLROOTCERT: ${CLAIM_DB_SSLROOTCERT:-}
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
       RESEND_API_KEY: ${RESEND_API_KEY:?set RESEND_API_KEY}
       USER_SERVICE_GRPC_ADDRESS: user-service:50051
@@ -88,6 +94,10 @@ services:
       - "8084:8084"
     expose:
       - "50054"
+    # Drop your CA at zero-hunger-infra/certs/ and set CLAIM_DB_SSLROOTCERT
+    # (e.g. /certs/prod-ca-2021.crt) when CLAIM_DB_SSLMODE is verify-ca/verify-full.
+    volumes:
+      - ./certs:/certs:ro
     depends_on:
       - user-service
       - request-service

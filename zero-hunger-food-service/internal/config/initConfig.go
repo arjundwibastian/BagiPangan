@@ -24,12 +24,13 @@ type GrpcConfig struct {
 	RequestService string
 }
 type DatabaseConfig struct {
-	Host     string
-	Port     string
-	User     string
-	Password string
-	Name     string
-	SSLMode  string
+	Host        string
+	Port        string
+	User        string
+	Password    string
+	Name        string
+	SSLMode     string
+	SSLRootCert string
 }
 
 type JWTConfig struct {
@@ -44,12 +45,13 @@ func Load() (*Config, error) {
 			GRPCPort: getenv("GRPC_PORT", "50052"),
 		},
 		Database: DatabaseConfig{
-			Host:     os.Getenv("DB_HOST"),
-			Port:     os.Getenv("DB_PORT"),
-			User:     os.Getenv("DB_USER"),
-			Password: os.Getenv("DB_PASSWORD"),
-			Name:     os.Getenv("DB_NAME"),
-			SSLMode:  os.Getenv("DB_SSLMODE"),
+			Host:        os.Getenv("DB_HOST"),
+			Port:        os.Getenv("DB_PORT"),
+			User:        os.Getenv("DB_USER"),
+			Password:    os.Getenv("DB_PASSWORD"),
+			Name:        os.Getenv("DB_NAME"),
+			SSLMode:     os.Getenv("DB_SSLMODE"),
+			SSLRootCert: os.Getenv("DB_SSLROOTCERT"),
 		},
 		JWT: JWTConfig{
 			Secret: os.Getenv("JWT_SECRET"),
@@ -102,6 +104,9 @@ func (cfg *Config) validate() error {
 		if value == "" {
 			return fmt.Errorf("missing required environment variable: %s", key)
 		}
+	}
+	if (cfg.Database.SSLMode == "verify-ca" || cfg.Database.SSLMode == "verify-full") && cfg.Database.SSLRootCert == "" {
+		return fmt.Errorf("DB_SSLROOTCERT is required when DB_SSLMODE is %s", cfg.Database.SSLMode)
 	}
 	return nil
 }

@@ -17,6 +17,9 @@ func NewPostgresDB(cfg *config.Config) (*gorm.DB, error) {
 		cfg.Database.Name,
 		cfg.Database.Port,
 		cfg.Database.SSLMode)
+	if cfg.Database.SSLRootCert != "" {
+		dsn += fmt.Sprintf(" sslrootcert=%s", cfg.Database.SSLRootCert)
+	}
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {

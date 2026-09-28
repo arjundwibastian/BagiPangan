@@ -36,7 +36,7 @@ import (
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal("fail to load config")
+		log.Fatal(err)
 	}
 	dbConn, err := database.NewPostgresDB(cfg)
 	if err != nil {

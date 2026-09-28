@@ -62,7 +62,7 @@ psql "$CLAIM_DATABASE_URL" -f zero-hunger-claim-service/migrations/001_init.sql
 cp zero-hunger-infra/.env.example zero-hunger-infra/.env
 ```
 
-Compose expects `*_HOST`, `*_USER`, `*_PASSWORD`, `JWT_SECRET`, `RESEND_API_KEY`. Defaults assume `host.docker.internal` and `sslmode=disable`.
+Compose expects `*_HOST`, `*_USER`, `*_PASSWORD`, `JWT_SECRET`, `RESEND_API_KEY`. Defaults assume `host.docker.internal` and `sslmode=disable`. Set `FOOD_DB_SSLROOTCERT`/`CLAIM_DB_SSLROOTCERT` (and mount the CA at `/certs`) when using a `verify-ca`/`verify-full` `sslmode`.
 
 5. Run:
 

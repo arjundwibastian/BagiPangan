@@ -12,3 +12,7 @@ coverage.out
 *.test
 **/request-service
 tmp/
+
+# Runtime certificates (mounted into containers, never committed)
+zero-hunger-infra/certs/*
+!zero-hunger-infra/certs/.gitkeep
