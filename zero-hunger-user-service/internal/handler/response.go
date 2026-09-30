@@ -7,13 +7,13 @@ import (
 )
 
 type Response struct {
-	RC      string `json:"rc"`
-	Message string `json:"message"`
-	Data    any    `json:"data"`
+	ResponseCode    string `json:"responseCode"`
+	ResponseMessage string `json:"responseMessage"`
+	ResponseData    any    `json:"responseData"`
 }
 
 func Success(c echo.Context, status int, message string, data any) error {
-	return c.JSON(status, Response{RC: "00", Message: message, Data: data})
+	return c.JSON(status, Response{ResponseCode: "00", ResponseMessage: message, ResponseData: data})
 }
 func Error(c echo.Context, err error) error {
 	status, rc, msg := 500, "50", "internal error"
@@ -29,5 +29,5 @@ func Error(c echo.Context, err error) error {
 	case errors.Is(err, domain.ErrForbidden):
 		status, rc, msg = 403, "44", err.Error()
 	}
-	return c.JSON(status, Response{RC: rc, Message: msg, Data: nil})
+	return c.JSON(status, Response{ResponseCode: rc, ResponseMessage: msg, ResponseData: nil})
 }

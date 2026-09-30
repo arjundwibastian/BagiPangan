@@ -42,6 +42,6 @@ The services read configuration only from the process environment and do not loa
 - Claim migration errors: ensure the Claim database is separate and run `migrations/001_init.sql` once.
 - Duplicate registration: change the email variables in the Postman environment or clean only the test rows in the external databases.
 
-All REST responses use `{ "rc": "00", "message": "...", "data": ... }` for User/Request and `{ "responseCode": "00", "responseMessage": "...", "responseData": ... }` for Food/Claim.
+All REST responses use the envelope `{ "responseCode": "00", "responseMessage": "...", "responseData": ... }`.
 
 See [END_TO_END_FLOW.md](docs/END_TO_END_FLOW.md) for ownership, lifecycle, and cancellation details.

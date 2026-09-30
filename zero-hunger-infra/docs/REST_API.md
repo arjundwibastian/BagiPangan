@@ -4,9 +4,9 @@ All endpoints use the envelope below:
 
 ```json
 {
-  "rc": "00",
-  "message": "success",
-  "data": {}
+  "responseCode": "00",
+  "responseMessage": "success",
+  "responseData": {}
 }
 ```
 
