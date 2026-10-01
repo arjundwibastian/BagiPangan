@@ -42,6 +42,10 @@ func main() {
 	if err != nil {
 		log.Fatal("Error connecting to database:", err)
 	}
+	sqlDB, err := dbConn.DB()
+	if err != nil {
+		log.Fatal("Error getting database handle:", err)
+	}
 	jwtSecret := []byte(cfg.JWT.Secret)
 	jwtMiddleware := middleware.NewJWTMiddleware(jwtSecret)
 
@@ -59,6 +63,8 @@ func main() {
 	httpHandler := handler.NewFoodListingHandler(usecase)
 
 	e := echo.New()
+	e.GET("/healthz", handler.Health)
+	e.GET("/readyz", handler.Ready(sqlDB.PingContext))
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
 	e.Use(echoMiddleware.RequestLogger())
 	e.Use(echoMiddleware.Recover())

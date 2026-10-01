@@ -36,6 +36,9 @@ func main() {
 	h := handler.NewHTTPHandler(svc)
 	e := echo.New()
 
+	e.GET("/healthz", handler.Health)
+	e.GET("/readyz", handler.Ready(db.Ping))
+
 	v1 := e.Group("/api/v1")
 
 	// Auth routes

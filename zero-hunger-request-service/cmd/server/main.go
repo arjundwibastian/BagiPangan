@@ -43,6 +43,8 @@ func main() {
 	svc := usecase.NewRequestService(repo, handler.NewUserClient(userv1.NewUserServiceClient(userConn), logger), cfg.RequestTTL)
 	h := handler.NewHTTPHandler(svc, cfg.JWTSecret)
 	e := echo.New()
+	e.GET("/healthz", handler.Health)
+	e.GET("/readyz", handler.Ready(db.Ping))
 	v1 := e.Group("/api/v1")
 	v1.POST("/food-requests", h.Create)
 	v1.GET("/food-requests/:request_id", h.Get)
