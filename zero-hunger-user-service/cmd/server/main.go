@@ -2,7 +2,15 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"log"
+	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
 	userv1 "github.com/zero-hunger/contracts/gen/user/v1"
@@ -11,9 +19,6 @@ import (
 	"github.com/zero-hunger/user-service/internal/repository"
 	"github.com/zero-hunger/user-service/internal/usecase"
 	"google.golang.org/grpc"
-	"log"
-	"net"
-	"time"
 )
 
 func main() {
@@ -56,8 +61,8 @@ func main() {
 	userv1.RegisterUserServiceServer(grpcServer, &handler.UserRPCServer{Users: svc})
 
 	go func() {
-		if err := e.Start(":" + cfg.ServerPort); err != nil {
-			log.Printf("http: %v", err)
+		if err := e.Start(":" + cfg.ServerPort); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("http server: %v", err)
 		}
 	}()
 
@@ -65,10 +70,24 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	go func() {
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("grpc server: %v", err)
+		}
+	}()
 
 	log.Printf("user service HTTP :%s, gRPC :%s", cfg.ServerPort, cfg.GRPCPort)
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatal(err)
+
+	stopCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	<-stopCtx.Done()
+	log.Println("shutdown signal received")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	if err := e.Shutdown(shutdownCtx); err != nil {
+		log.Printf("http shutdown: %v", err)
 	}
-	_ = fmt.Sprint(time.Now())
+	grpcServer.GracefulStop()
+	log.Println("shutdown complete")
 }

@@ -2,8 +2,14 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/labstack/echo/v4"
@@ -54,16 +60,31 @@ func main() {
 	grpcServer := grpc.NewServer()
 	requestv1.RegisterRequestServiceServer(grpcServer, &handler.RequestRPCServer{Requests: svc})
 	go func() {
-		if err := e.Start(":" + cfg.ServerPort); err != nil {
-			log.Printf("http: %v", err)
+		if err := e.Start(":" + cfg.ServerPort); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("http server: %v", err)
 		}
 	}()
 	lis, err := net.Listen("tcp", ":"+cfg.GRPCPort)
 	if err != nil {
 		log.Fatal(err)
 	}
+	go func() {
+		if err := grpcServer.Serve(lis); err != nil {
+			log.Fatalf("grpc server: %v", err)
+		}
+	}()
 	log.Printf("request service HTTP :%s, gRPC :%s", cfg.ServerPort, cfg.GRPCPort)
-	if err := grpcServer.Serve(lis); err != nil {
-		log.Fatal(err)
+
+	stopCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	<-stopCtx.Done()
+	log.Println("shutdown signal received")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	if err := e.Shutdown(shutdownCtx); err != nil {
+		log.Printf("http shutdown: %v", err)
 	}
+	grpcServer.GracefulStop()
+	log.Println("shutdown complete")
 }

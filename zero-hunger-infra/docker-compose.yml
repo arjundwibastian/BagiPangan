@@ -16,6 +16,13 @@ services:
       - "8081:8081"
     expose:
       - "50051"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/readyz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    stop_grace_period: 15s
 
   request-service:
     build:
@@ -35,8 +42,16 @@ services:
       - "8083:8083"
     expose:
       - "50053"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8083/readyz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    stop_grace_period: 15s
     depends_on:
-      - user-service
+      user-service:
+        condition: service_healthy
 
   food-service:
     build:
@@ -65,9 +80,18 @@ services:
     # (e.g. /certs/prod-ca-2021.crt) when FOOD_DB_SSLMODE is verify-ca/verify-full.
     volumes:
       - ./certs:/certs:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/readyz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    stop_grace_period: 15s
     depends_on:
-      - user-service
-      - request-service
+      user-service:
+        condition: service_healthy
+      request-service:
+        condition: service_healthy
 
   claim-service:
     build:
@@ -98,7 +122,17 @@ services:
     # (e.g. /certs/prod-ca-2021.crt) when CLAIM_DB_SSLMODE is verify-ca/verify-full.
     volumes:
       - ./certs:/certs:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8084/readyz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    stop_grace_period: 15s
     depends_on:
-      - user-service
-      - request-service
-      - food-service
+      user-service:
+        condition: service_healthy
+      food-service:
+        condition: service_healthy
+      request-service:
+        condition: service_healthy

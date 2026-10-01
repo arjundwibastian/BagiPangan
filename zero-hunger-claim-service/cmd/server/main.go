@@ -2,7 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
+	nethttp "net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
@@ -102,9 +108,22 @@ func main() {
 
 	e.POST("/api/v1/claims/:claim_id/cancel", httpHandler.CancelClaim, auth)
 
+	go func() {
+		if err := e.Start(":" + cfg.App.Port); err != nil && !errors.Is(err, nethttp.ErrServerClosed) {
+			log.Fatalf("http server: %v", err)
+		}
+	}()
 	log.Printf("claim service listening on :%s", cfg.App.Port)
 
-	if err := e.Start(":" + cfg.App.Port); err != nil {
-		log.Fatal(err)
+	stopCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	<-stopCtx.Done()
+	log.Println("shutdown signal received")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	if err := e.Shutdown(shutdownCtx); err != nil {
+		log.Printf("http shutdown: %v", err)
 	}
+	log.Println("shutdown complete")
 }

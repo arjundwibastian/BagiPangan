@@ -2,8 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -85,24 +90,38 @@ func main() {
 	// ticker for auto updates
 	go startListingStatusUpdater(repo)
 
+	grpcServer := grpc.NewServer()
+	foodv1.RegisterFoodServiceServer(grpcServer, handler.NewFoodRpcServer(usecase))
+
+	lis, err := net.Listen("tcp", ":"+cfg.App.GRPCPort)
+	if err != nil {
+		log.Fatalf("failed to listen gRPC: %v", err)
+	}
 	go func() {
-		lis, err := net.Listen("tcp", ":"+cfg.App.GRPCPort)
-		if err != nil {
-			log.Fatalf("failed to listen gRPC: %v", err)
-		}
-		grpcServer := grpc.NewServer()
-		rpcHandler := handler.NewFoodRpcServer(usecase)
-		foodv1.RegisterFoodServiceServer(grpcServer, rpcHandler)
 		log.Printf("gRPC server listening on :%s", cfg.App.GRPCPort)
 		if err := grpcServer.Serve(lis); err != nil {
 			log.Fatalf("failed to serve gRPC: %v", err)
 		}
 	}()
 
-	port := cfg.App.Port
-	if err := e.Start(":" + port); err != nil {
-		e.Logger.Fatal(err)
+	go func() {
+		if err := e.Start(":" + cfg.App.Port); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("http server: %v", err)
+		}
+	}()
+
+	stopCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	<-stopCtx.Done()
+	log.Println("shutdown signal received")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+	if err := e.Shutdown(shutdownCtx); err != nil {
+		log.Printf("http shutdown: %v", err)
 	}
+	grpcServer.GracefulStop()
+	log.Println("shutdown complete")
 }
 
 
