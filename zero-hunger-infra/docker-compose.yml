@@ -136,3 +136,27 @@ services:
         condition: service_healthy
       request-service:
         condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-localhost}
+      CORS_ALLOWED_ORIGIN: ${CORS_ALLOWED_ORIGIN:-http://localhost:3000}
+    ports:
+      - "8443:443"
+      # For production also publish the standard ports:
+      # - "80:80"
+      # - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - user-service
+      - food-service
+      - request-service
+      - claim-service
+
+volumes:
+  caddy_data:
+  caddy_config:
