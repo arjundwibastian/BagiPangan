@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: vet + test (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - zero-hunger-contracts
+          - zero-hunger-user-service
+          - zero-hunger-request-service
+          - zero-hunger-food-service
+          - zero-hunger-claim-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ matrix.service }}/go.mod
+          cache-dependency-path: ${{ matrix.service }}/go.sum
+
+      - name: go vet
+        working-directory: ${{ matrix.service }}
+        run: go vet ./...
+
+      - name: go test
+        working-directory: ${{ matrix.service }}
+        run: go test ./...
+
+  build:
+    name: config + images
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare env for compose
+        working-directory: zero-hunger-infra
+        run: cp .env.example .env
+
+      - name: Validate docker-compose
+        working-directory: zero-hunger-infra
+        run: docker compose config -q
+
+      - name: Validate Caddyfile
+        run: docker run --rm -v "$PWD/zero-hunger-infra/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
+
+      - name: Build images
+        working-directory: zero-hunger-infra
+        run: docker compose build
