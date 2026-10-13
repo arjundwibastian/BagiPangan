@@ -27,3 +27,11 @@ export interface ApiResponse<T> {
   responseMessage: string;
   responseData: T;
 }
+
+export interface RegisterRequest {
+  name: string;
+  email: string;
+  phone: string;
+  role: Role;
+  password: string;
+}
