@@ -156,3 +156,60 @@ body {
   text-decoration-thickness: 2px;
   text-underline-offset: 2px;
 }
+
+.auth-link {
+  padding: 0;
+  font: inherit;
+  font-weight: 700;
+  color: var(--forest);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+.role-field {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.role-field legend {
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+.role-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.role-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  background: var(--cream);
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    background 120ms ease;
+}
+
+.role-option input {
+  accent-color: var(--forest);
+}
+
+.role-option:has(input:checked) {
+  background: var(--yellow);
+  box-shadow: 4px 4px 0 var(--ink);
+  transform: translate(-1px, -1px);
+}

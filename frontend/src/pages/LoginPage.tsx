@@ -6,9 +6,10 @@ import type { User } from "../types/auth";
 
 interface LoginPageProps {
   onLoggedIn: (user: User) => void;
+  onSwitchToRegister: () => void;
 }
 
-export function LoginPage({ onLoggedIn }: LoginPageProps) {
+export function LoginPage({ onLoggedIn, onSwitchToRegister }: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -78,7 +79,14 @@ export function LoginPage({ onLoggedIn }: LoginPageProps) {
         </form>
 
         <p className="auth-switch">
-          New here? <a href="/register">Create an account</a>
+          New here?{" "}
+          <button
+            type="button"
+            className="auth-link"
+            onClick={onSwitchToRegister}
+          >
+            Create an account
+          </button>
         </p>
       </main>
     </div>

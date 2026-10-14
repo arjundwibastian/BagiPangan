@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { LoginPage } from "./pages/LoginPage";
+import { RegisterPage } from "./pages/RegisterPage";
 import type { User } from "./types/auth";
 
 export default function App() {
@@ -7,9 +8,20 @@ export default function App() {
     const stored = localStorage.getItem("user");
     return stored ? (JSON.parse(stored) as User) : null;
   });
+  const [authView, setAuthView] = useState<"login" | "register">("login");
 
   if (!user) {
-    return <LoginPage onLoggedIn={setUser} />;
+    return authView === "login" ? (
+      <LoginPage
+        onLoggedIn={setUser}
+        onSwitchToRegister={() => setAuthView("register")}
+      />
+    ) : (
+      <RegisterPage
+        onRegistered={setUser}
+        onSwitchToLogin={() => setAuthView("login")}
+      />
+    );
   }
 
   return (
@@ -22,6 +34,7 @@ export default function App() {
           onClick={() => {
             localStorage.clear();
             setUser(null);
+            setAuthView("login");
           }}
         >
           Log out
