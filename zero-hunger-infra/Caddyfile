@@ -1,16 +1,12 @@
-# Zero Hunger edge: TLS termination, CORS, and routing to the services.
+# Zero Hunger edge: routes requests to the services and applies CORS.
 #
-# Local development (default): https://localhost:8443 using Caddy's internal CA.
-# The browser will warn about the self-signed certificate - accept it once.
-#
-# Production: set SITE_ADDRESS to your real domain, delete the `tls internal`
-# line so Caddy obtains a public Let's Encrypt certificate, and publish 80/443.
+# TLS is terminated by Cloudflare Tunnel (the `cloudflared` service), so Caddy
+# only serves plain HTTP internally and is never exposed directly.
 #
 # CORS is configured here once for every service. Point CORS_ALLOWED_ORIGIN at
 # your frontend's origin.
 
-{$SITE_ADDRESS:localhost} {
-	tls internal
+:80 {
 	encode gzip
 
 	# ---- CORS: one policy for all services ----

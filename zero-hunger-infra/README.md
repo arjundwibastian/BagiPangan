@@ -35,19 +35,17 @@ Verify that each service logs its listener, then import `docs/Zero Hunger Local.
 
 The services read configuration only from the process environment and do not load `.env` files themselves, so start them through Compose (or another tool that injects the environment).
 
-## HTTPS edge + CORS (Caddy)
+## Edge: Cloudflare Tunnel + Caddy + CORS
 
-A `caddy` service terminates TLS and routes to the four services on one origin, and applies a single CORS policy for all of them. The services themselves need no CORS code.
+A `cloudflared` service opens an **outbound** tunnel to Cloudflare, which terminates TLS and exposes the app on your domain. `caddy` is an **internal-only** router (plain HTTP) that maps paths to the four services and applies a single CORS policy for all of them — the services themselves need no CORS code.
 
-- Local: `https://localhost:8443` (self-signed via Caddy's internal CA — accept the browser warning once).
-- The app services still publish `8081`-`8084` for direct/Postman access; in production drop those `ports:` entries so only the proxy is public.
+- No inbound ports are opened on the host; the tunnel connects out to Cloudflare.
 - Configure in `.env`:
-  - `SITE_ADDRESS` — the public hostname (default `localhost`).
-  - `CORS_ALLOWED_ORIGIN` — the exact origin of your browser frontend (default `http://localhost:3000`).
+  - `CLOUDFLARE_TUNNEL_TOKEN` — from Zero Trust → Networks → Tunnels → Create a tunnel.
+  - `CORS_ALLOWED_ORIGIN` — the exact origin of your browser frontend.
+- In the Cloudflare dashboard, add a **Public Hostname** whose service is `http://caddy:80`.
 
 Routing is path-based; specific paths win. See `Caddyfile`. Swagger `/swagger/*` is not proxied.
-
-For production, set `SITE_ADDRESS` to your domain, remove `tls internal` from the `Caddyfile`, and publish `80`/`443` instead of `8443`.
 
 ## Troubleshooting
 

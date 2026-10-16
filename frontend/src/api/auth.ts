@@ -1,5 +1,10 @@
 import { request } from "./client";
-import type { AuthResult, LoginRequest, RegisterRequest } from "../types/auth";
+import type {
+  AuthResult,
+  LoginRequest,
+  RegisterRequest,
+  User,
+} from "../types/auth";
 
 export function login(payload: LoginRequest): Promise<AuthResult> {
   return request<AuthResult>("/auth/login", {
@@ -8,6 +13,9 @@ export function login(payload: LoginRequest): Promise<AuthResult> {
   });
 }
 
-export function register(payload: RegisterRequest) {
-  return 
+export function register(payload: RegisterRequest): Promise<User> {
+  return request<User>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }
