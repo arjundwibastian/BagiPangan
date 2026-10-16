@@ -124,8 +124,5 @@ func (cfg *Config) validate() error {
 			return fmt.Errorf("missing required environment variable: %s", key)
 		}
 	}
-	if (cfg.Database.SSLMode == "verify-ca" || cfg.Database.SSLMode == "verify-full") && cfg.Database.SSLRootCert == "" {
-		return fmt.Errorf("DB_SSLROOTCERT is required when DB_SSLMODE is %s", cfg.Database.SSLMode)
-	}
 	return nil
 }
