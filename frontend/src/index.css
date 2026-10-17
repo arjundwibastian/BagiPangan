@@ -397,3 +397,20 @@ textarea.field-input {
   gap: 12px;
   margin: 16px 0;
 }
+
+.badge--searching {
+  background: var(--yellow);
+}
+
+.badge--completed {
+  background: #b9e3c2;
+}
+
+.badge--cancelled {
+  background: #dddddd;
+}
+
+.card .btn-secondary,
+.card .btn-primary {
+  margin-top: 12px;
+}

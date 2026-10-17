@@ -23,3 +23,7 @@ export interface CreateFoodRequestRequest {
   longitude: number;
   radius_km: number;
 }
+
+export interface CreateFoodRequestResponse {
+  request: FoodRequest;
+}

@@ -5,6 +5,9 @@ import { AppShell } from "./components/AppShell";
 import type { Tab } from "./components/AppShell";
 import { MyListingsPage } from "./pages/donor/MyListingsPage";
 import { CreateListingPage } from "./pages/donor/CreateListingPage";
+import { MyRequestsPage } from "./pages/recipient/MyRequestsPage";
+import { CreateRequestPage } from "./pages/recipient/CreateRequestPage";
+import { NearbyPage } from "./pages/recipient/NearbyPage";
 import type { User } from "./types/auth";
 
 export default function App() {
@@ -13,7 +16,7 @@ export default function App() {
     return stored ? (JSON.parse(stored) as User) : null;
   });
   const [authView, setAuthView] = useState<"login" | "register">("login");
-  const [view, setView] = useState("listings");
+  const [view, setView] = useState("");
 
   if (!user) {
     return authView === "login" ? (
@@ -35,39 +38,40 @@ export default function App() {
           { id: "listings", label: "My Listings" },
           { id: "create-listing", label: "Create Listing" },
         ]
-      : [];
+      : [
+          { id: "requests", label: "My Requests" },
+          { id: "create-request", label: "Create Request" },
+          { id: "nearby", label: "Browse Nearby" },
+        ];
+
+  const activeView = tabs.some((tab) => tab.id === view)
+    ? view
+    : (tabs[0]?.id ?? "");
 
   function handleLogout() {
     localStorage.clear();
     setUser(null);
     setAuthView("login");
-    setView("listings");
+    setView("");
   }
 
   return (
     <AppShell
       user={user}
       tabs={tabs}
-      current={view}
+      current={activeView}
       onNavigate={setView}
       onLogout={handleLogout}
     >
-      {user.role === "donor" && view === "listings" && (
-        <MyListingsPage user={user} />
-      )}
-      {user.role === "donor" && view === "create-listing" && (
+      {activeView === "listings" && <MyListingsPage user={user} />}
+      {activeView === "create-listing" && (
         <CreateListingPage onCreated={() => setView("listings")} />
       )}
-      {tabs.length === 0 && (
-        <section className="page">
-          <div className="page-header">
-            <h2 className="page-title">Welcome, {user.name}</h2>
-            <p className="page-subtitle">
-              Recipient features arrive in the next batch.
-            </p>
-          </div>
-        </section>
+      {activeView === "requests" && <MyRequestsPage user={user} />}
+      {activeView === "create-request" && (
+        <CreateRequestPage onCreated={() => setView("requests")} />
       )}
+      {activeView === "nearby" && <NearbyPage user={user} />}
     </AppShell>
   );
 }

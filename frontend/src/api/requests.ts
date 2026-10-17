@@ -1,10 +1,14 @@
 import { request } from "./client";
-import type { CreateFoodRequestRequest, FoodRequest } from "../types/request";
+import type {
+  CreateFoodRequestRequest,
+  CreateFoodRequestResponse,
+  FoodRequest,
+} from "../types/request";
 
 export function createFoodRequest(
   payload: CreateFoodRequestRequest,
-): Promise<FoodRequest> {
-  return request<FoodRequest>("/food-requests", {
+): Promise<CreateFoodRequestResponse> {
+  return request<CreateFoodRequestResponse>("/food-requests", {
     method: "POST",
     body: JSON.stringify(payload),
   });
