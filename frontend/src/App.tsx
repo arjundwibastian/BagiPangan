@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { AppShell } from "./components/AppShell";
+import type { Tab } from "./components/AppShell";
+import { MyListingsPage } from "./pages/donor/MyListingsPage";
+import { CreateListingPage } from "./pages/donor/CreateListingPage";
 import type { User } from "./types/auth";
 
 export default function App() {
@@ -9,6 +13,7 @@ export default function App() {
     return stored ? (JSON.parse(stored) as User) : null;
   });
   const [authView, setAuthView] = useState<"login" | "register">("login");
+  const [view, setView] = useState("listings");
 
   if (!user) {
     return authView === "login" ? (
@@ -24,22 +29,45 @@ export default function App() {
     );
   }
 
+  const tabs: Tab[] =
+    user.role === "donor"
+      ? [
+          { id: "listings", label: "My Listings" },
+          { id: "create-listing", label: "Create Listing" },
+        ]
+      : [];
+
+  function handleLogout() {
+    localStorage.clear();
+    setUser(null);
+    setAuthView("login");
+    setView("listings");
+  }
+
   return (
-    <div className="auth-screen">
-      <main className="auth-card">
-        <h1 className="auth-title">Hi, {user.name}</h1>
-        <p className="auth-subtitle">Logged in as {user.role}.</p>
-        <button
-          className="btn-primary"
-          onClick={() => {
-            localStorage.clear();
-            setUser(null);
-            setAuthView("login");
-          }}
-        >
-          Log out
-        </button>
-      </main>
-    </div>
+    <AppShell
+      user={user}
+      tabs={tabs}
+      current={view}
+      onNavigate={setView}
+      onLogout={handleLogout}
+    >
+      {user.role === "donor" && view === "listings" && (
+        <MyListingsPage user={user} />
+      )}
+      {user.role === "donor" && view === "create-listing" && (
+        <CreateListingPage onCreated={() => setView("listings")} />
+      )}
+      {tabs.length === 0 && (
+        <section className="page">
+          <div className="page-header">
+            <h2 className="page-title">Welcome, {user.name}</h2>
+            <p className="page-subtitle">
+              Recipient features arrive in the next batch.
+            </p>
+          </div>
+        </section>
+      )}
+    </AppShell>
   );
 }
