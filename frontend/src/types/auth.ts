@@ -35,3 +35,8 @@ export interface RegisterRequest {
   role: Role;
   password: string;
 }
+
+export interface UpdateProfileRequest {
+  name: string;
+  phone: string;
+}

@@ -29,6 +29,10 @@ export async function request<T>(
   const body: ApiResponse<T> = await res.json();
 
   if (body.responseCode !== "00") {
+    if (body.responseCode === "41" && token) {
+      localStorage.clear();
+      window.location.reload();
+    }
     throw new ApiError(body.responseCode, body.responseMessage);
   }
 

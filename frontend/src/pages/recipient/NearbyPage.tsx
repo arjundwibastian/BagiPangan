@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { listFoodRequests } from "../../api/requests";
 import { listNearbyFoodListings } from "../../api/food";
+import { createClaim } from "../../api/claims";
 import { ApiError } from "../../api/client";
+import { addClaimId } from "../../lib/claims";
 import type { FoodRequest } from "../../types/request";
 import type { FoodListing } from "../../types/food";
+import type { FoodClaim } from "../../types/claim";
 import type { User } from "../../types/auth";
 
 interface NearbyPageProps {
@@ -14,6 +17,9 @@ export function NearbyPage({ user }: NearbyPageProps) {
   const [requests, setRequests] = useState<FoodRequest[]>([]);
   const [requestId, setRequestId] = useState("");
   const [listings, setListings] = useState<FoodListing[]>([]);
+  const [quantities, setQuantities] = useState<Record<string, string>>({});
+  const [claimed, setClaimed] = useState<FoodClaim | null>(null);
+  const [claimingId, setClaimingId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
@@ -48,6 +54,7 @@ export function NearbyPage({ user }: NearbyPageProps) {
     setLoading(true);
     setError("");
     setSearched(true);
+    setClaimed(null);
 
     try {
       const data = await listNearbyFoodListings(requestId);
@@ -62,6 +69,28 @@ export function NearbyPage({ user }: NearbyPageProps) {
       }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleClaim(listing: FoodListing) {
+    setError("");
+    setClaimed(null);
+    setClaimingId(listing.food_listing_id);
+
+    try {
+      const claim = await createClaim({
+        request_id: requestId,
+        food_listing_id: listing.food_listing_id,
+        claimed_quantity: Number(quantities[listing.food_listing_id] ?? "1"),
+      });
+      addClaimId(user.user_id, claim.claim_id);
+      setClaimed(claim);
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Cannot reach the server.",
+      );
+    } finally {
+      setClaimingId("");
     }
   }
 
@@ -106,6 +135,12 @@ export function NearbyPage({ user }: NearbyPageProps) {
 
       {error && <p className="auth-error">{error}</p>}
 
+      {claimed && (
+        <p className="success-note">
+          Claimed! Pickup code: <strong>{claimed.claim_code}</strong>
+        </p>
+      )}
+
       {searched && !loading && !error && listings.length === 0 && (
         <p className="muted">No listings found within that request's radius.</p>
       )}
@@ -125,6 +160,32 @@ export function NearbyPage({ user }: NearbyPageProps) {
             <p className="card-meta">
               At {listing.latitude}, {listing.longitude}
             </p>
+
+            <div className="claim-row">
+              <input
+                className="field-input"
+                type="number"
+                min={1}
+                max={listing.quantity}
+                value={quantities[listing.food_listing_id] ?? "1"}
+                onChange={(e) =>
+                  setQuantities((current) => ({
+                    ...current,
+                    [listing.food_listing_id]: e.target.value,
+                  }))
+                }
+              />
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => handleClaim(listing)}
+                disabled={claimingId !== ""}
+              >
+                {claimingId === listing.food_listing_id
+                  ? "Claiming..."
+                  : "Claim"}
+              </button>
+            </div>
           </article>
         ))}
       </div>

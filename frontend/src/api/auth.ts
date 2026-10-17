@@ -19,3 +19,9 @@ export function register(payload: RegisterRequest): Promise<User> {
     body: JSON.stringify(payload),
   });
 }
+export function logout(refreshToken: string): Promise<null> {
+  return request<null>("/auth/logout", {
+    method: "POST",
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+}

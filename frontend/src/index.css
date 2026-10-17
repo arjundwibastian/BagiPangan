@@ -414,3 +414,33 @@ textarea.field-input {
 .card .btn-primary {
   margin-top: 12px;
 }
+
+.success-note {
+  margin-top: 12px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: #d7f0da;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+}
+
+.claim-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.claim-row .field-input {
+  width: 84px;
+}
+
+.field-static {
+  padding: 12px 14px;
+  font-size: 1rem;
+  color: #5a5a4d;
+  background: #f0ead8;
+  border: 2px dashed var(--ink);
+  border-radius: 10px;
+}
