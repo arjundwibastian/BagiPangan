@@ -104,7 +104,7 @@ func (s *SendGridEmailService) SendClaimNotification(claim *domain.ClaimNotifica
 	)
 
 params := &resend.SendEmailRequest{
-	From:    "Zero Hunger <admin@resend.dev>",
+	From:    "Zero Hunger <noreply@bagipangan.my.id>",
 	To:      []string{claim.RecipientEmail},
 	Subject: "🥗 Your Food Claim Is Confirmed",
 	Html:    htmlContent,
@@ -228,7 +228,7 @@ func (s *SendGridEmailService) SendCancelNotification(claim *domain.ClaimNotific
 			)
 
 	params := &resend.SendEmailRequest{
-		From:    "Zero Hunger <admin@resend.dev>",
+		From:    "Zero Hunger <noreply@bagipangan.my.id>",
 		To:      []string{claim.RecipientEmail},
 		Subject: "📦 Your Claim Has Been Cancelled",
 		Html:    htmlContent,

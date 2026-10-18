@@ -13,7 +13,7 @@ services:
       JWT_ACCESS_TTL: 1h
       JWT_REFRESH_TTL: 168h
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"
     expose:
       - "50051"
     healthcheck:
@@ -23,6 +23,7 @@ services:
       retries: 5
       start_period: 10s
     stop_grace_period: 15s
+    restart: unless-stopped
 
   request-service:
     build:
@@ -39,7 +40,7 @@ services:
       USER_SERVICE_GRPC_ADDRESS: user-service:50051
       FOOD_SERVICE_GRPC_ADDRESS: food-service:50052
     ports:
-      - "8083:8083"
+      - "127.0.0.1:8083:8083"
     expose:
       - "50053"
     healthcheck:
@@ -52,6 +53,7 @@ services:
     depends_on:
       user-service:
         condition: service_healthy
+    restart: unless-stopped
 
   food-service:
     build:
@@ -73,7 +75,7 @@ services:
       REQUEST_SERVICE_GRPC_ADDRESS: request-service:50053
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
     ports:
-      - "8082:8082"
+      - "127.0.0.1:8082:8082"
     expose:
       - "50052"
     # Drop your CA at zero-hunger-infra/certs/ and set FOOD_DB_SSLROOTCERT
@@ -92,6 +94,7 @@ services:
         condition: service_healthy
       request-service:
         condition: service_healthy
+    restart: unless-stopped
 
   claim-service:
     build:
@@ -101,7 +104,6 @@ services:
     environment:
       PORT: "8084"
       SERVER_PORT: "8084"
-      GRPC_PORT: "50054"
       DB_HOST: ${CLAIM_DB_HOST:?set CLAIM_DB_HOST}
       DB_PORT: ${CLAIM_DB_PORT:?set CLAIM_DB_PORT}
       DB_USER: ${CLAIM_DB_USER:?set CLAIM_DB_USER}
@@ -115,9 +117,7 @@ services:
       FOOD_SERVICE_GRPC_ADDRESS: food-service:50052
       REQUEST_SERVICE_GRPC_ADDRESS: request-service:50053
     ports:
-      - "8084:8084"
-    expose:
-      - "50054"
+      - "127.0.0.1:8084:8084"
     # Drop your CA at zero-hunger-infra/certs/ and set CLAIM_DB_SSLROOTCERT
     # (e.g. /certs/prod-ca-2021.crt) when CLAIM_DB_SSLMODE is verify-ca/verify-full.
     volumes:
@@ -136,6 +136,7 @@ services:
         condition: service_healthy
       request-service:
         condition: service_healthy
+    restart: unless-stopped
 
   caddy:
     image: caddy:2-alpine
@@ -150,6 +151,7 @@ services:
       - food-service
       - request-service
       - claim-service
+    restart: unless-stopped
 
   cloudflared:
     image: cloudflare/cloudflared:latest
