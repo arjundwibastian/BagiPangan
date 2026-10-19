@@ -1,6 +1,7 @@
 import type { ApiResponse } from "../types/auth";
 
-const BASE_URL = "/api/v1";
+const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+const BASE_URL = `${API_ORIGIN}/api/v1`;
 
 export class ApiError extends Error {
   code: string;
