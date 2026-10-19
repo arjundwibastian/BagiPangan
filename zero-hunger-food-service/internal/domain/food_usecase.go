@@ -13,6 +13,8 @@ type FoodListingUseCase interface {
 	SearchNearbyFoodListing(ctx context.Context, requestID uuid.UUID) (*[]FoodListing, error)
 	SearchNearbyFoodListings(ctx context.Context, latitude, longitude, radiusKM float64) (*[]FoodListing, error)
 	GetFoodListingByID(ctx context.Context, id uuid.UUID) (*FoodListing, error)
+	UpdateFoodListing(ctx context.Context, userID uuid.UUID, id uuid.UUID, req dto.UpdateFoodListingRequest) (*FoodListing, error)
+	CancelFoodListing(ctx context.Context, userID uuid.UUID, id uuid.UUID) (*FoodListing, error)
 	ReserveFoodQuantity(ctx context.Context, listingID uuid.UUID, claimID uuid.UUID, quantity int32) (*FoodListing, error)
 	ReleaseFoodQuantity(ctx context.Context, listingID uuid.UUID, claimID uuid.UUID, quantity int32) (*FoodListing, error)
 }

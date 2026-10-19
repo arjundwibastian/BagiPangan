@@ -234,3 +234,76 @@ func (r *gormFoodListingRepo) UpdateExpiredAndClaimedListings(ctx context.Contex
 	return result.Error
 
 }
+
+func (r *gormFoodListingRepo) UpdateFoodListing(
+	ctx context.Context,
+	id uuid.UUID,
+	update domain.FoodListingUpdate,
+) (*domain.FoodListing, error) {
+	updates := map[string]interface{}{"updated_at": time.Now()}
+
+	if update.Title != nil {
+		updates["title"] = *update.Title
+	}
+	if update.Description != nil {
+		updates["description"] = *update.Description
+	}
+	if update.Latitude != nil {
+		updates["latitude"] = *update.Latitude
+	}
+	if update.Longitude != nil {
+		updates["longitude"] = *update.Longitude
+	}
+	if update.FoodType != nil {
+		updates["food_type"] = *update.FoodType
+	}
+	if update.Quantity != nil {
+		updates["quantity"] = *update.Quantity
+	}
+	if update.AvailableFrom != nil {
+		updates["available_from"] = *update.AvailableFrom
+	}
+	if update.AvailableUntil != nil {
+		updates["available_until"] = *update.AvailableUntil
+	}
+
+	result := r.db.
+		WithContext(ctx).
+		Model(&domain.FoodListing{}).
+		Where("food_listing_id = ?", id).
+		Updates(updates)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return nil, domain.ErrNotFound
+	}
+
+	return r.GetFoodListingByID(ctx, id)
+}
+
+func (r *gormFoodListingRepo) CancelFoodListing(
+	ctx context.Context,
+	id uuid.UUID,
+) (*domain.FoodListing, error) {
+	result := r.db.
+		WithContext(ctx).
+		Model(&domain.FoodListing{}).
+		Where("food_listing_id = ?", id).
+		Updates(map[string]interface{}{
+			"status":     domain.StatusExpired,
+			"updated_at": time.Now(),
+		})
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return nil, domain.ErrNotFound
+	}
+
+	return r.GetFoodListingByID(ctx, id)
+}

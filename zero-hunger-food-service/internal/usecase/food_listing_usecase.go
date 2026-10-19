@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -171,4 +172,99 @@ func (uc *foodListingUseCase) ReleaseFoodQuantity(
 		listingID,
 		quantity,
 	)
+}
+
+func (uc *foodListingUseCase) UpdateFoodListing(
+	ctx context.Context,
+	userID uuid.UUID,
+	id uuid.UUID,
+	req dto.UpdateFoodListingRequest,
+) (*domain.FoodListing, error) {
+	if userID == uuid.Nil || id == uuid.Nil {
+		return nil, domain.ErrInvalidInput
+	}
+
+	listing, err := uc.foodListingRepo.GetFoodListingByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if listing.UserID != userID {
+		return nil, domain.ErrForbidden
+	}
+
+	if listing.Status != domain.StatusAvailable {
+		return nil, domain.ErrListingUnavailable
+	}
+
+	update := domain.FoodListingUpdate{
+		Title:          req.Title,
+		Description:    req.Description,
+		Latitude:       req.Latitude,
+		Longitude:      req.Longitude,
+		Quantity:       req.Quantity,
+		AvailableFrom:  req.AvailableFrom,
+		AvailableUntil: req.AvailableUntil,
+	}
+
+	if req.Title != nil && strings.TrimSpace(*req.Title) == "" {
+		return nil, domain.ErrInvalidInput
+	}
+	if req.Quantity != nil && *req.Quantity < 0 {
+		return nil, domain.ErrInvalidInput
+	}
+	if req.Latitude != nil && (*req.Latitude < -90 || *req.Latitude > 90) {
+		return nil, domain.ErrInvalidInput
+	}
+	if req.Longitude != nil && (*req.Longitude < -180 || *req.Longitude > 180) {
+		return nil, domain.ErrInvalidInput
+	}
+	if req.FoodType != nil {
+		foodType := domain.FoodCategory(*req.FoodType)
+		switch foodType {
+		case domain.FoodCooked, domain.FoodRaw, domain.FoodBakery:
+		default:
+			return nil, domain.ErrInvalidInput
+		}
+		update.FoodType = &foodType
+	}
+
+	availableFrom := listing.AvailableFrom
+	availableUntil := listing.AvailableUntil
+	if req.AvailableFrom != nil {
+		availableFrom = *req.AvailableFrom
+	}
+	if req.AvailableUntil != nil {
+		availableUntil = *req.AvailableUntil
+	}
+	if !availableUntil.After(availableFrom) {
+		return nil, domain.ErrInvalidInput
+	}
+
+	return uc.foodListingRepo.UpdateFoodListing(ctx, id, update)
+}
+
+func (uc *foodListingUseCase) CancelFoodListing(
+	ctx context.Context,
+	userID uuid.UUID,
+	id uuid.UUID,
+) (*domain.FoodListing, error) {
+	if userID == uuid.Nil || id == uuid.Nil {
+		return nil, domain.ErrInvalidInput
+	}
+
+	listing, err := uc.foodListingRepo.GetFoodListingByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if listing.UserID != userID {
+		return nil, domain.ErrForbidden
+	}
+
+	if listing.Status != domain.StatusAvailable {
+		return nil, domain.ErrListingUnavailable
+	}
+
+	return uc.foodListingRepo.CancelFoodListing(ctx, id)
 }

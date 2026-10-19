@@ -24,6 +24,11 @@ type RequestService interface {
 		requestID string,
 	) (*requestv1.GetRequestResponse, error)
 
+	ListRequestsByUser(
+		ctx context.Context,
+		userID string,
+	) (*requestv1.ListRequestsByUserResponse, error)
+
 	MarkRequestClaimed(
 		ctx context.Context,
 		requestID string,

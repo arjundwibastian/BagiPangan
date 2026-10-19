@@ -102,6 +102,8 @@ func main() {
 
 	e.POST("/api/v1/claims", httpHandler.CreateClaim, auth)
 
+	e.GET("/api/v1/claims", httpHandler.ListClaims, auth)
+
 	e.GET("/api/v1/claims/:claim_id", httpHandler.GetClaim, auth)
 
 	e.POST("/api/v1/claims/:claim_id/verify-pickup", httpHandler.VerifyPickupCode, auth)

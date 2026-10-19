@@ -14,3 +14,15 @@ type CreateFoodListingRequest struct {
 	AvailableFrom  time.Time `json:"available_from" validate:"required"`
 	AvailableUntil time.Time `json:"available_until" validate:"required,gtfield=AvailableFrom"`
 }
+
+// UpdateFoodListingRequest is a partial update: nil fields are left unchanged.
+type UpdateFoodListingRequest struct {
+	Title          *string    `json:"title,omitempty"`
+	Description    *string    `json:"description,omitempty"`
+	Longitude      *float64   `json:"longitude,omitempty"`
+	Latitude       *float64   `json:"latitude,omitempty"`
+	FoodType       *string    `json:"food_type,omitempty"`
+	Quantity       *int32     `json:"quantity,omitempty"`
+	AvailableFrom  *time.Time `json:"available_from,omitempty"`
+	AvailableUntil *time.Time `json:"available_until,omitempty"`
+}

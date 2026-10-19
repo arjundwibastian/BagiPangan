@@ -257,3 +257,32 @@ func writeError(c echo.Context, err error) error {
 		ResponseData:    nil,
 	})
 }
+
+// ListClaims godoc
+// @Summary List claims for the current user
+// @Description Return all claims belonging to the authenticated user
+// @ID list-claims
+// @Tags Claims
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} dto.HandlerResponse{responseData=[]domain.FoodClaim}
+// @Failure 401 {object} dto.HandlerResponse
+// @Failure 500 {object} dto.HandlerResponse
+// @Router /claims [get]
+func (h *HTTPHandler) ListClaims(c echo.Context) error {
+	userID, err := currentUserID(c)
+	if err != nil {
+		return writeError(c, err)
+	}
+
+	claims, err := h.claims.ListClaims(c.Request().Context(), userID)
+	if err != nil {
+		return writeError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, dto.HandlerResponse{
+		ResponseCode:    "00",
+		ResponseMessage: "claims retrieved successfully",
+		ResponseData:    claims,
+	})
+}

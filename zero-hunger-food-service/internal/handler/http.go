@@ -275,3 +275,134 @@ func (h *FoodListingHandler) GetFoodListingByIDHandler(c echo.Context) error {
 		ResponseData:    listing,
 	})
 }
+
+// UpdateFoodListingHandler godoc
+// @Summary Update a food listing
+// @Description Partially update a food listing owned by the authenticated donor
+// @ID update-food-listing
+// @Tags Food Listings
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param food_listing_id path string true "Food listing ID" format(uuid)
+// @Param request body dto.UpdateFoodListingRequest true "Fields to update"
+// @Success 200 {object} dto.HandlerResponse{responseData=domain.FoodListing}
+// @Failure 400 {object} dto.HandlerResponse
+// @Failure 401 {object} dto.HandlerResponse
+// @Failure 403 {object} dto.HandlerResponse
+// @Failure 404 {object} dto.HandlerResponse
+// @Failure 409 {object} dto.HandlerResponse
+// @Failure 500 {object} dto.HandlerResponse
+// @Router /food-listings/{food_listing_id} [patch]
+func (h *FoodListingHandler) UpdateFoodListingHandler(c echo.Context) error {
+	userID, err := uuid.Parse(c.Get("user_id").(string))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.HandlerResponse{
+			ResponseCode:    "01",
+			ResponseMessage: "error: user id is invalid",
+			ResponseData:    nil,
+		})
+	}
+
+	id, err := uuid.Parse(c.Param("food_listing_id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.HandlerResponse{
+			ResponseCode:    "01",
+			ResponseMessage: "invalid food listing id",
+			ResponseData:    nil,
+		})
+	}
+
+	var req dto.UpdateFoodListingRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.HandlerResponse{
+			ResponseCode:    "01",
+			ResponseMessage: err.Error(),
+			ResponseData:    nil,
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request().Context(), 10*time.Second)
+	defer cancel()
+
+	listing, err := h.foodListingUC.UpdateFoodListing(ctx, userID, id, req)
+	if err != nil {
+		return writeFoodListingError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, dto.HandlerResponse{
+		ResponseCode:    "00",
+		ResponseMessage: "food listing updated successfully",
+		ResponseData:    listing,
+	})
+}
+
+// CancelFoodListingHandler godoc
+// @Summary Cancel a food listing
+// @Description Cancel (expire) a food listing owned by the authenticated donor
+// @ID cancel-food-listing
+// @Tags Food Listings
+// @Produce json
+// @Security BearerAuth
+// @Param food_listing_id path string true "Food listing ID" format(uuid)
+// @Success 200 {object} dto.HandlerResponse{responseData=domain.FoodListing}
+// @Failure 400 {object} dto.HandlerResponse
+// @Failure 401 {object} dto.HandlerResponse
+// @Failure 403 {object} dto.HandlerResponse
+// @Failure 404 {object} dto.HandlerResponse
+// @Failure 409 {object} dto.HandlerResponse
+// @Failure 500 {object} dto.HandlerResponse
+// @Router /food-listings/{food_listing_id} [delete]
+func (h *FoodListingHandler) CancelFoodListingHandler(c echo.Context) error {
+	userID, err := uuid.Parse(c.Get("user_id").(string))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.HandlerResponse{
+			ResponseCode:    "01",
+			ResponseMessage: "error: user id is invalid",
+			ResponseData:    nil,
+		})
+	}
+
+	id, err := uuid.Parse(c.Param("food_listing_id"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.HandlerResponse{
+			ResponseCode:    "01",
+			ResponseMessage: "invalid food listing id",
+			ResponseData:    nil,
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(c.Request().Context(), 10*time.Second)
+	defer cancel()
+
+	listing, err := h.foodListingUC.CancelFoodListing(ctx, userID, id)
+	if err != nil {
+		return writeFoodListingError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, dto.HandlerResponse{
+		ResponseCode:    "00",
+		ResponseMessage: "food listing cancelled successfully",
+		ResponseData:    listing,
+	})
+}
+
+func writeFoodListingError(c echo.Context, err error) error {
+	status := http.StatusInternalServerError
+	switch {
+	case errors.Is(err, domain.ErrInvalidInput):
+		status = http.StatusBadRequest
+	case errors.Is(err, domain.ErrForbidden):
+		status = http.StatusForbidden
+	case errors.Is(err, domain.ErrNotFound):
+		status = http.StatusNotFound
+	case errors.Is(err, domain.ErrListingUnavailable):
+		status = http.StatusConflict
+	}
+
+	return c.JSON(status, dto.HandlerResponse{
+		ResponseCode:    "01",
+		ResponseMessage: err.Error(),
+		ResponseData:    nil,
+	})
+}

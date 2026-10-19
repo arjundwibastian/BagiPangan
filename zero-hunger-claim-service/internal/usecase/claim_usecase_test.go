@@ -78,6 +78,22 @@ func (r *claimRepoMock) Cancel(
 	return claim, nil
 }
 
+func (r *claimRepoMock) ListByRequestIDs(
+	_ context.Context,
+	requestIDs []uuid.UUID,
+) ([]domain.FoodClaim, error) {
+	claims := make([]domain.FoodClaim, 0)
+	for _, requestID := range requestIDs {
+		for _, claim := range r.claims {
+			if claim.RequestID == requestID {
+				claims = append(claims, *claim)
+			}
+		}
+	}
+
+	return claims, nil
+}
+
 type claimUserMock struct {
 	user *userv1.GetUserResponse
 }
@@ -102,6 +118,15 @@ func (m *requestMock) GetRequest(
 ) (*requestv1.GetRequestResponse, error) {
 	return &requestv1.GetRequestResponse{
 		Request: m.data,
+	}, nil
+}
+
+func (m *requestMock) ListRequestsByUser(
+	_ context.Context,
+	_ string,
+) (*requestv1.ListRequestsByUserResponse, error) {
+	return &requestv1.ListRequestsByUserResponse{
+		Requests: []*requestv1.FoodRequest{m.data},
 	}, nil
 }
 

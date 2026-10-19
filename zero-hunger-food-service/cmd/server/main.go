@@ -78,8 +78,8 @@ func main() {
 	donor := e.Group("")
 	donor.Use(jwtMiddleware.Authenticate, jwtMiddleware.DonorOnly)
 	donor.POST("/api/v1/food-listings", httpHandler.CreateFoodListingHandler)
-	// e.PUT("/api/v1/orders/:id", orderHandler.UpdateOrderByIDHandler)
-	// e.DELETE("/api/v1/orders/:id", orderHandler.DeleteOrderByIDHandler)
+	donor.PATCH("/api/v1/food-listings/:food_listing_id", httpHandler.UpdateFoodListingHandler)
+	donor.DELETE("/api/v1/food-listings/:food_listing_id", httpHandler.CancelFoodListingHandler)
 
 	allRole := e.Group("")
 	allRole.Use(jwtMiddleware.Authenticate)

@@ -78,6 +78,39 @@ func (r *repoMock) UpdateExpiredAndClaimedListings(
 	return nil
 }
 
+func (r *repoMock) UpdateFoodListing(
+	_ context.Context,
+	id uuid.UUID,
+	update domain.FoodListingUpdate,
+) (*domain.FoodListing, error) {
+	food, err := r.GetFoodListingByID(context.Background(), id)
+	if err != nil {
+		return nil, err
+	}
+
+	if update.Title != nil {
+		food.Title = *update.Title
+	}
+	if update.Quantity != nil {
+		food.Quantity = *update.Quantity
+	}
+
+	return food, nil
+}
+
+func (r *repoMock) CancelFoodListing(
+	_ context.Context,
+	id uuid.UUID,
+) (*domain.FoodListing, error) {
+	food, err := r.GetFoodListingByID(context.Background(), id)
+	if err != nil {
+		return nil, err
+	}
+
+	food.Status = domain.StatusExpired
+	return food, nil
+}
+
 type mockUser struct {
 	data *userv1.GetUserResponse
 }

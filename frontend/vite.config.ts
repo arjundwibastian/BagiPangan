@@ -7,27 +7,27 @@ export default defineConfig({
     port: 3000,
     proxy: {
       "^/api/v1/users/[^/]+/food-requests": {
-        target: "http://localhost:8083",
+        target: "https://app.bagipangan.my.id",
         changeOrigin: true,
       },
       "/api/v1/food-listings": {
-        target: "http://localhost:8082",
+        target: "https://app.bagipangan.my.id",
         changeOrigin: true,
       },
       "/api/v1/food-requests": {
-        target: "http://localhost:8083",
+        target: "https://app.bagipangan.my.id",
         changeOrigin: true,
       },
       "/api/v1/claims": {
-        target: "http://localhost:8084",
+        target: "https://app.bagipangan.my.id",
         changeOrigin: true,
       },
       "/api/v1/users": {
-        target: "http://localhost:8081",
+        target: "https://app.bagipangan.my.id",
         changeOrigin: true,
       },
       "/api/v1/auth": {
-        target: "http://localhost:8081",
+        target: "https://app.bagipangan.my.id",
         changeOrigin: true,
       },
     },

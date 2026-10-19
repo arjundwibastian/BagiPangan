@@ -44,6 +44,18 @@ func (c *RequestClient) GetRequest(
 	)
 }
 
+func (c *RequestClient) ListRequestsByUser(
+	ctx context.Context,
+	userID string,
+) (*requestv1.ListRequestsByUserResponse, error) {
+	return c.client.ListRequestsByUser(
+		ctx,
+		&requestv1.ListRequestsByUserRequest{
+			UserId: userID,
+		},
+	)
+}
+
 func (c *RequestClient) MarkRequestClaimed(
 	ctx context.Context,
 	requestID string,

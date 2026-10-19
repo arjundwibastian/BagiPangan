@@ -25,6 +25,11 @@ type ClaimUseCase interface {
 		claimID uuid.UUID,
 	) (*FoodClaim, error)
 
+	ListClaims(
+		ctx context.Context,
+		userID uuid.UUID,
+	) ([]FoodClaim, error)
+
 	VerifyPickupCode(
 		ctx context.Context,
 		userID uuid.UUID,

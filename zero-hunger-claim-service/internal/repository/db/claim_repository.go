@@ -53,6 +53,28 @@ func (r *claimRepository) GetByID(
 	return &claim, nil
 }
 
+func (r *claimRepository) ListByRequestIDs(
+	ctx context.Context,
+	requestIDs []uuid.UUID,
+) ([]domain.FoodClaim, error) {
+	claims := make([]domain.FoodClaim, 0)
+	if len(requestIDs) == 0 {
+		return claims, nil
+	}
+
+	err := r.db.
+		WithContext(ctx).
+		Where("request_id IN ?", requestIDs).
+		Order("created_at DESC").
+		Find(&claims).
+		Error
+	if err != nil {
+		return nil, err
+	}
+
+	return claims, nil
+}
+
 func (r *claimRepository) DeleteByID(
 	ctx context.Context,
 	id uuid.UUID,

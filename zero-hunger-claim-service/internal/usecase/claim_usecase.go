@@ -415,3 +415,31 @@ func generateClaimCode() (string, error) {
 
 	return fmt.Sprintf("%06d", number.Int64()), nil
 }
+
+func (uc *claimUseCase) ListClaims(
+	ctx context.Context,
+	userID uuid.UUID,
+) ([]domain.FoodClaim, error) {
+	if userID == uuid.Nil {
+		return nil, domain.ErrInvalidInput
+	}
+
+	requestsResponse, err := uc.requestService.ListRequestsByUser(ctx, userID.String())
+	if err != nil {
+		return nil, err
+	}
+
+	requestIDs := make([]uuid.UUID, 0, len(requestsResponse.GetRequests()))
+	for _, request := range requestsResponse.GetRequests() {
+		if request == nil {
+			continue
+		}
+		id, err := uuid.Parse(request.GetRequestId())
+		if err != nil {
+			continue
+		}
+		requestIDs = append(requestIDs, id)
+	}
+
+	return uc.repo.ListByRequestIDs(ctx, requestIDs)
+}
