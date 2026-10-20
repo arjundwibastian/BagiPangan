@@ -81,6 +81,7 @@ func main() {
 	donor.PATCH("/api/v1/food-listings/:food_listing_id", httpHandler.UpdateFoodListingHandler)
 	donor.DELETE("/api/v1/food-listings/:food_listing_id", httpHandler.CancelFoodListingHandler)
 
+	//new api
 	allRole := e.Group("")
 	allRole.Use(jwtMiddleware.Authenticate)
 	allRole.GET("/api/v1/food-listings", httpHandler.GetActiveFoodListingHandler)
