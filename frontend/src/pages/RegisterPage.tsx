@@ -1,11 +1,11 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { login, register } from "../api/auth";
+import { register } from "../api/auth";
 import { ApiError } from "../api/client";
-import type { Role, User } from "../types/auth";
+import type { Role } from "../types/auth";
 
 interface RegisterPageProps {
-  onRegistered: (user: User) => void;
+  onRegistered: () => void;
   onSwitchToLogin: () => void;
 }
 
@@ -28,11 +28,7 @@ export function RegisterPage({
 
     try {
       await register({ name, email, phone, role, password });
-      const result = await login({ email, password });
-      localStorage.setItem("access_token", result.access_token);
-      localStorage.setItem("refresh_token", result.refresh_token);
-      localStorage.setItem("user", JSON.stringify(result.user));
-      onRegistered(result.user);
+      onRegistered();
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);

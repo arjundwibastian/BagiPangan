@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { createFoodListing } from "../../api/food";
 import { ApiError } from "../../api/client";
+import { MapPicker } from "../../components/MapPicker";
 import type { CreateFoodListingRequest, FoodCategory } from "../../types/food";
 
 interface CreateListingPageProps {
@@ -81,29 +82,17 @@ export function CreateListingPage({ onCreated }: CreateListingPageProps) {
             />
           </label>
 
-          <label className="field">
-            <span className="field-label">Latitude</span>
-            <input
-              className="field-input"
-              type="number"
-              step="any"
-              value={latitude}
-              onChange={(e) => setLatitude(e.target.value)}
-              required
+          <div className="field field--full">
+            <span className="field-label">Pickup location</span>
+            <MapPicker
+              latitude={Number(latitude)}
+              longitude={Number(longitude)}
+              onChange={(lat, lng) => {
+                setLatitude(lat.toFixed(6));
+                setLongitude(lng.toFixed(6));
+              }}
             />
-          </label>
-
-          <label className="field">
-            <span className="field-label">Longitude</span>
-            <input
-              className="field-input"
-              type="number"
-              step="any"
-              value={longitude}
-              onChange={(e) => setLongitude(e.target.value)}
-              required
-            />
-          </label>
+          </div>
 
           <label className="field">
             <span className="field-label">Food type</span>

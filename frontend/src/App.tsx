@@ -20,18 +20,29 @@ export default function App() {
     return stored ? (JSON.parse(stored) as User) : null;
   });
   const [authView, setAuthView] = useState<"login" | "register">("login");
+  const [notice, setNotice] = useState("");
   const [view, setView] = useState("");
 
   if (!user) {
     return authView === "login" ? (
       <LoginPage
+        notice={notice}
         onLoggedIn={setUser}
-        onSwitchToRegister={() => setAuthView("register")}
+        onSwitchToRegister={() => {
+          setNotice("");
+          setAuthView("register");
+        }}
       />
     ) : (
       <RegisterPage
-        onRegistered={setUser}
-        onSwitchToLogin={() => setAuthView("login")}
+        onRegistered={() => {
+          setNotice("Account created successfully. Please sign in.");
+          setAuthView("login");
+        }}
+        onSwitchToLogin={() => {
+          setNotice("");
+          setAuthView("login");
+        }}
       />
     );
   }
@@ -64,6 +75,7 @@ export default function App() {
     localStorage.clear();
     setUser(null);
     setAuthView("login");
+    setNotice("");
     setView("");
   }
 

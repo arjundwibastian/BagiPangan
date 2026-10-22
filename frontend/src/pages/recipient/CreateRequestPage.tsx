@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { createFoodRequest } from "../../api/requests";
 import { ApiError } from "../../api/client";
+import { MapPicker } from "../../components/MapPicker";
 import type { CreateFoodRequestRequest } from "../../types/request";
 
 interface CreateRequestPageProps {
@@ -47,29 +48,18 @@ export function CreateRequestPage({ onCreated }: CreateRequestPageProps) {
 
       <form className="auth-form" onSubmit={handleSubmit}>
         <div className="form-grid">
-          <label className="field">
-            <span className="field-label">Latitude</span>
-            <input
-              className="field-input"
-              type="number"
-              step="any"
-              value={latitude}
-              onChange={(e) => setLatitude(e.target.value)}
-              required
+          <div className="field field--full">
+            <span className="field-label">Search location</span>
+            <MapPicker
+              latitude={Number(latitude)}
+              longitude={Number(longitude)}
+              radiusKm={Number(radiusKm)}
+              onChange={(lat, lng) => {
+                setLatitude(lat.toFixed(6));
+                setLongitude(lng.toFixed(6));
+              }}
             />
-          </label>
-
-          <label className="field">
-            <span className="field-label">Longitude</span>
-            <input
-              className="field-input"
-              type="number"
-              step="any"
-              value={longitude}
-              onChange={(e) => setLongitude(e.target.value)}
-              required
-            />
-          </label>
+          </div>
 
           <label className="field">
             <span className="field-label">Radius (km)</span>

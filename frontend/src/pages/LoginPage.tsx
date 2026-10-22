@@ -7,9 +7,14 @@ import type { User } from "../types/auth";
 interface LoginPageProps {
   onLoggedIn: (user: User) => void;
   onSwitchToRegister: () => void;
+  notice?: string;
 }
 
-export function LoginPage({ onLoggedIn, onSwitchToRegister }: LoginPageProps) {
+export function LoginPage({
+  onLoggedIn,
+  onSwitchToRegister,
+  notice,
+}: LoginPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -43,6 +48,9 @@ export function LoginPage({ onLoggedIn, onSwitchToRegister }: LoginPageProps) {
         <p className="auth-eyebrow">BagiPangan</p>
         <h1 className="auth-title">Welcome back</h1>
         <p className="auth-subtitle">Share extra food with people nearby.</p>
+        <p className="auth-subtitle">Share extra food with people nearby.</p>
+
+        {notice && <p className="success-note">{notice}</p>}
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <label className="field">
