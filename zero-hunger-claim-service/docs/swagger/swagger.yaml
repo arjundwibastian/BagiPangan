@@ -50,6 +50,13 @@ definitions:
       responseMessage:
         type: string
     type: object
+  dto.VerifyListingPickupRequest:
+    properties:
+      claim_code:
+        type: string
+      food_listing_id:
+        type: string
+    type: object
   dto.VerifyPickupRequest:
     properties:
       claim_code:
@@ -63,6 +70,36 @@ info:
   version: "1.0"
 paths:
   /claims:
+    get:
+      description: Return all claims belonging to the authenticated user
+      operationId: list-claims
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.HandlerResponse'
+            - properties:
+                responseData:
+                  items:
+                    $ref: '#/definitions/domain.FoodClaim'
+                  type: array
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: List claims for the current user
+      tags:
+      - Claims
     post:
       consumes:
       - application/json
@@ -81,12 +118,7 @@ paths:
         "201":
           description: Created
           schema:
-            allOf:
-            - $ref: '#/definitions/dto.HandlerResponse'
-            - properties:
-                responseData:
-                  $ref: '#/definitions/domain.FoodClaim'
-              type: object
+            $ref: '#/definitions/dto.HandlerResponse'
         "400":
           description: Bad Request
           schema:
@@ -274,6 +306,44 @@ paths:
       security:
       - BearerAuth: []
       summary: Verify a pickup code
+      tags:
+      - Claims
+  /claims/verify-pickup:
+    post:
+      consumes:
+      - application/json
+      description: Only the listing's donor can verify its pickup. No claim ID is
+        required.
+      parameters:
+      - description: Listing and pickup code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.VerifyListingPickupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.HandlerResponse'
+            - properties:
+                responseData:
+                  $ref: '#/definitions/domain.FoodClaim'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: Verify pickup using a listing and recipient code
       tags:
       - Claims
 schemes:

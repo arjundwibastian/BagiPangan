@@ -19,6 +19,7 @@ type FoodListingUpdate struct {
 }
 
 type FoodListingRepository interface {
+	ListByUser(ctx context.Context, userID uuid.UUID) ([]FoodListing, error)
 	InsertNewFoodListing(ctx context.Context, foods *FoodListing) (*FoodListing, error)
 	GetActiveFoodListing(ctx context.Context, status string) (*[]FoodListing, error)
 	GetFoodListingByID(ctx context.Context, id uuid.UUID) (*FoodListing, error)

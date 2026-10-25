@@ -5,6 +5,10 @@ export function listFoodListings(): Promise<FoodListing[]> {
   return request<FoodListing[]>("/food-listings");
 }
 
+export function listOwnFoodListings(): Promise<FoodListing[]> {
+  return request<FoodListing[]>("/food-listings/mine");
+}
+
 export function getFoodListing(id: string): Promise<FoodListing> {
   return request<FoodListing>(`/food-listings/${id}`);
 }

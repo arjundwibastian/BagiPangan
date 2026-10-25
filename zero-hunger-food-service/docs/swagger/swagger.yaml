@@ -95,6 +95,25 @@ definitions:
       responseMessage:
         type: string
     type: object
+  dto.UpdateFoodListingRequest:
+    properties:
+      available_from:
+        type: string
+      available_until:
+        type: string
+      description:
+        type: string
+      food_type:
+        type: string
+      latitude:
+        type: number
+      longitude:
+        type: number
+      quantity:
+        type: integer
+      title:
+        type: string
+    type: object
 host: localhost:8082
 info:
   contact: {}
@@ -187,6 +206,57 @@ paths:
       tags:
       - Food Listings
   /food-listings/{food_listing_id}:
+    delete:
+      description: Cancel (expire) a food listing owned by the authenticated donor
+      operationId: cancel-food-listing
+      parameters:
+      - description: Food listing ID
+        format: uuid
+        in: path
+        name: food_listing_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.HandlerResponse'
+            - properties:
+                responseData:
+                  $ref: '#/definitions/domain.FoodListing'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: Cancel a food listing
+      tags:
+      - Food Listings
     get:
       description: Return the details of a specific food listing
       operationId: get-food-listing-by-id
@@ -228,6 +298,90 @@ paths:
       security:
       - BearerAuth: []
       summary: Get food listing by ID
+      tags:
+      - Food Listings
+    patch:
+      consumes:
+      - application/json
+      description: Partially update a food listing owned by the authenticated donor
+      operationId: update-food-listing
+      parameters:
+      - description: Food listing ID
+        format: uuid
+        in: path
+        name: food_listing_id
+        required: true
+        type: string
+      - description: Fields to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateFoodListingRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.HandlerResponse'
+            - properties:
+                responseData:
+                  $ref: '#/definitions/domain.FoodListing'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: Update a food listing
+      tags:
+      - Food Listings
+  /food-listings/mine:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/dto.HandlerResponse'
+            - properties:
+                responseData:
+                  items:
+                    $ref: '#/definitions/domain.FoodListing'
+                  type: array
+              type: object
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/dto.HandlerResponse'
+      security:
+      - BearerAuth: []
+      summary: List the authenticated donor's listings, including fully reserved food
       tags:
       - Food Listings
   /food-listings/nearby:

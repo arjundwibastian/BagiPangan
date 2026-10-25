@@ -425,6 +425,12 @@ textarea.field-input {
   border-radius: 10px;
 }
 
+.pickup-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
 .claim-row {
   display: flex;
   gap: 8px;

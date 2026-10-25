@@ -12,8 +12,39 @@ import (
 )
 
 type repoMock struct {
-	foods   []domain.FoodListing
+	foods    []domain.FoodListing
 	inserted *domain.FoodListing
+}
+
+func (r *repoMock) ListByUser(_ context.Context, userID uuid.UUID) ([]domain.FoodListing, error) {
+	listings := make([]domain.FoodListing, 0)
+	for _, listing := range r.foods {
+		if listing.UserID == userID {
+			listings = append(listings, listing)
+		}
+	}
+	return listings, nil
+}
+
+func TestListOwnFoodListings(t *testing.T) {
+	owner := uuid.New()
+	repo := &repoMock{foods: []domain.FoodListing{
+		{FoodListingID: uuid.New(), UserID: owner, Status: domain.StatusAvailable, Quantity: 3},
+		{FoodListingID: uuid.New(), UserID: owner, Status: domain.StatusClaimed, Quantity: 0},
+		{FoodListingID: uuid.New(), UserID: uuid.New(), Status: domain.StatusAvailable, Quantity: 5},
+	}}
+	service := NewfoodListingUseCase(repo, nil, nil)
+	listings, err := service.ListOwnFoodListings(context.Background(), owner)
+	if err != nil || len(listings) != 2 {
+		t.Fatalf("expected both owned listings, got %v, %v", listings, err)
+	}
+	if listings[1].Status != domain.StatusClaimed {
+		t.Fatal("fully reserved listing must remain visible")
+	}
+	empty, err := service.ListOwnFoodListings(context.Background(), uuid.New())
+	if err != nil || empty == nil || len(empty) != 0 {
+		t.Fatalf("expected an empty list, got %v, %v", empty, err)
+	}
 }
 
 func (r *repoMock) InsertNewFoodListing(

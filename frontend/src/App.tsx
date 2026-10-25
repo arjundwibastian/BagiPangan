@@ -91,7 +91,7 @@ export default function App() {
       {activeView === "create-listing" && (
         <CreateListingPage onCreated={() => setView("listings")} />
       )}
-      {activeView === "verify" && <VerifyPickupPage />}
+      {activeView === "verify" && <VerifyPickupPage user={user} />}
       {activeView === "requests" && <MyRequestsPage user={user} />}
       {activeView === "create-request" && (
         <CreateRequestPage onCreated={() => setView("requests")} />

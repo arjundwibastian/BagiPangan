@@ -148,6 +148,30 @@ func (h *FoodListingHandler) GetActiveFoodListingHandler(c echo.Context) error {
 	})
 }
 
+// ListOwnFoodListingsHandler godoc
+// @Summary List the authenticated donor's listings, including fully reserved food
+// @Tags Food Listings
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} dto.HandlerResponse{responseData=[]domain.FoodListing}
+// @Failure 403 {object} dto.HandlerResponse
+// @Router /food-listings/mine [get]
+func (h *FoodListingHandler) ListOwnFoodListingsHandler(c echo.Context) error {
+	userID, err := uuid.Parse(c.Get("user_id").(string))
+	if err != nil {
+		return writeFoodListingError(c, domain.ErrInvalidInput)
+	}
+	ctx, cancel := context.WithTimeout(c.Request().Context(), 10*time.Second)
+	defer cancel()
+	listings, err := h.foodListingUC.ListOwnFoodListings(ctx, userID)
+	if err != nil {
+		return writeFoodListingError(c, err)
+	}
+	return c.JSON(http.StatusOK, dto.HandlerResponse{
+		ResponseCode: "00", ResponseMessage: "listings retrieved successfully", ResponseData: listings,
+	})
+}
+
 // GetNearbyFoodListingHandler godoc
 // @Summary Find nearby food listings
 // @Description Find active food listings near the location of a food request

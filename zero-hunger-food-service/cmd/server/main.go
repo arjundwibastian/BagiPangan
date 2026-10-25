@@ -78,6 +78,7 @@ func main() {
 	donor := e.Group("")
 	donor.Use(jwtMiddleware.Authenticate, jwtMiddleware.DonorOnly)
 	donor.POST("/api/v1/food-listings", httpHandler.CreateFoodListingHandler)
+	donor.GET("/api/v1/food-listings/mine", httpHandler.ListOwnFoodListingsHandler)
 	donor.PATCH("/api/v1/food-listings/:food_listing_id", httpHandler.UpdateFoodListingHandler)
 	donor.DELETE("/api/v1/food-listings/:food_listing_id", httpHandler.CancelFoodListingHandler)
 
@@ -124,9 +125,6 @@ func main() {
 	grpcServer.GracefulStop()
 	log.Println("shutdown complete")
 }
-
-
-
 
 func startListingStatusUpdater(repo domain.FoodListingRepository) {
 	ticker := time.NewTicker(10 * time.Minute)

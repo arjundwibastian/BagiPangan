@@ -151,6 +151,51 @@
                 }
             }
         },
+        "/food-listings/mine": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Food Listings"
+                ],
+                "summary": "List the authenticated donor's listings, including fully reserved food",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.HandlerResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "responseData": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/domain.FoodListing"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.HandlerResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/food-listings/nearby": {
             "get": {
                 "security": [
@@ -296,6 +341,182 @@
                         }
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cancel (expire) a food listing owned by the authenticated donor",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Food Listings"
+                ],
+                "summary": "Cancel a food listing",
+                "operationId": "cancel-food-listing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Food listing ID",
+                        "name": "food_listing_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.HandlerResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "responseData": {
+                                            "$ref": "#/definitions/domain.FoodListing"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.HandlerResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.HandlerResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.HandlerResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.HandlerResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/dto.HandlerResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.HandlerResponse"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Partially update a food listing owned by the authenticated donor",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Food Listings"
+                ],
+                "summary": "Update a food listing",
+                "operationId": "update-food-listing",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Food listing ID",
+                        "name": "food_listing_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Fields to update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateFoodListingRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/dto.HandlerResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "responseData": {
+                                            "$ref": "#/definitions/domain.FoodListing"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.HandlerResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/dto.HandlerResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/dto.HandlerResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.HandlerResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/dto.HandlerResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.HandlerResponse"
+                        }
+                    }
+                }
             }
         }
     },
@@ -428,6 +649,35 @@
                 },
                 "responseData": {},
                 "responseMessage": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UpdateFoodListingRequest": {
+            "type": "object",
+            "properties": {
+                "available_from": {
+                    "type": "string"
+                },
+                "available_until": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "food_type": {
+                    "type": "string"
+                },
+                "latitude": {
+                    "type": "number"
+                },
+                "longitude": {
+                    "type": "number"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "title": {
                     "type": "string"
                 }
             }

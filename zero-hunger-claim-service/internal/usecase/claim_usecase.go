@@ -20,7 +20,7 @@ type claimUseCase struct {
 	userService    domain.UserService
 	requestService domain.RequestService
 	foodService    domain.FoodService
-	emailService domain.EmailService
+	emailService   domain.EmailService
 }
 
 func NewClaimUseCase(
@@ -35,7 +35,7 @@ func NewClaimUseCase(
 		userService:    userService,
 		requestService: requestService,
 		foodService:    foodService,
-		emailService: emailService,
+		emailService:   emailService,
 	}
 }
 
@@ -175,7 +175,7 @@ func (uc *claimUseCase) CreateClaim(
 	notificationData := domain.ClaimNotificationData{
 		RecipientName:  user.GetName(),
 		RecipientEmail: user.GetEmail(),
-		FoodName:       listing.GetTitle(), 
+		FoodName:       listing.GetTitle(),
 		Quantity:       createdClaim.ClaimedQuantity,
 		ClaimCode:      createdClaim.ClaimCode,
 		CodeExpiresAt:  createdClaim.CodeExpiresAt,
@@ -185,7 +185,7 @@ func (uc *claimUseCase) CreateClaim(
 		if err := uc.emailService.SendClaimNotification(&data); err != nil {
 			log.Printf("failed to send claim notification: %v", err)
 		}
-	}(notificationData)	
+	}(notificationData)
 
 	return createdClaim, nil
 }
@@ -209,6 +209,40 @@ func (uc *claimUseCase) GetClaim(
 	}
 
 	return claim, nil
+}
+
+func (uc *claimUseCase) VerifyListingPickupCode(ctx context.Context, userID uuid.UUID, listingID uuid.UUID, code string) (*domain.FoodClaim, error) {
+	if userID == uuid.Nil || listingID == uuid.Nil || len(code) != 6 {
+		return nil, domain.ErrInvalidInput
+	}
+	for _, digit := range code {
+		if digit < '0' || digit > '9' {
+			return nil, domain.ErrInvalidInput
+		}
+	}
+	user, err := uc.userService.GetUser(ctx, userID.String())
+	if err != nil {
+		return nil, err
+	}
+	if user.GetRole() != userv1.UserRole_USER_ROLE_DONOR {
+		return nil, domain.ErrForbidden
+	}
+	response, err := uc.foodService.GetFoodListing(ctx, listingID.String())
+	if err != nil {
+		return nil, err
+	}
+	listing, err := findListing(response, listingID.String())
+	if err != nil {
+		return nil, err
+	}
+	if listing.GetUserId() != userID.String() {
+		return nil, domain.ErrForbidden
+	}
+	claim, err := uc.repo.GetByListingAndCode(ctx, listingID, code)
+	if err != nil {
+		return nil, err
+	}
+	return uc.VerifyPickupCode(ctx, userID, claim.ClaimID, code)
 }
 
 func (uc *claimUseCase) VerifyPickupCode(
@@ -325,7 +359,7 @@ func (uc *claimUseCase) CancelClaim(
 	notificationData := domain.ClaimNotificationData{
 		RecipientName:  user.GetName(),
 		RecipientEmail: user.GetEmail(),
-		FoodName : "",
+		FoodName:       "",
 		Quantity:       cancelledClaim.ClaimedQuantity,
 		ClaimCode:      cancelledClaim.ClaimCode,
 		CodeExpiresAt:  cancelledClaim.CodeExpiresAt,
@@ -335,7 +369,7 @@ func (uc *claimUseCase) CancelClaim(
 		if err := uc.emailService.SendCancelNotification(&data); err != nil {
 			log.Printf("failed to send cancel notification: %v", err)
 		}
-	}(notificationData)	
+	}(notificationData)
 
 	return cancelledClaim, nil
 }
