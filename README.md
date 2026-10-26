@@ -220,6 +220,23 @@ The frontend deploys separately via Cloudflare Pages (auto-build on push). The b
 
 ## Tests
 
+### Donor pickup verification
+
+In the frontend, open **Verify Pickup**, find your listing, and enter the
+recipient's six-digit pickup code. Claim IDs are resolved by the backend.
+Available and fully reserved listings are shown; expired listings are hidden.
+
+- `GET /api/v1/food-listings/mine` returns the authenticated donor's listings,
+  including listings with no unreserved stock. An empty result is `[]`.
+- `POST /api/v1/claims/verify-pickup` accepts `food_listing_id` and `claim_code`.
+  The backend checks donor ownership and uses the existing verification flow to
+  reject expired, cancelled, and already collected claims.
+
+Deploy the food and claim services before deploying this frontend change.
+For a manual check, claim all stock as a recipient, then verify that the fully
+reserved listing is still visible to its donor. Enter a wrong code first, then
+the recipient's correct code; only the correct code should complete the pickup.
+
 ```bash
 # per service
 cd zero-hunger-user-service && go test ./...

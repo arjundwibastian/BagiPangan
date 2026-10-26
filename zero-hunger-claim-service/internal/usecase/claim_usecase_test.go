@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -36,6 +37,15 @@ func (r *claimRepoMock) GetByID(
 	return claim, nil
 }
 
+func (r *claimRepoMock) GetByListingAndCode(_ context.Context, listingID uuid.UUID, code string) (*domain.FoodClaim, error) {
+	for _, claim := range r.claims {
+		if claim.FoodListingID == listingID && claim.ClaimCode == code {
+			return claim, nil
+		}
+	}
+	return nil, domain.ErrInvalidInput
+}
+
 func (r *claimRepoMock) DeleteByID(
 	_ context.Context,
 	id uuid.UUID,
@@ -56,6 +66,12 @@ func (r *claimRepoMock) VerifyPickupCode(
 
 	if claim.ClaimCode != code {
 		return nil, domain.ErrInvalidInput
+	}
+	if claim.Status != domain.StatusWaitingForPickup {
+		return nil, domain.ErrClaimAlreadyVerified
+	}
+	if time.Now().After(claim.CodeExpiresAt) {
+		return nil, domain.ErrClaimExpired
 	}
 
 	now := time.Now()
@@ -106,10 +122,10 @@ func (m *claimUserMock) GetUser(
 }
 
 type requestMock struct {
-	data        *requestv1.FoodRequest
-	markedClaim bool
+	data         *requestv1.FoodRequest
+	markedClaim  bool
 	markedSearch bool
-	completed   bool
+	completed    bool
 }
 
 func (m *requestMock) GetRequest(
@@ -227,6 +243,63 @@ func (m *mailMock) SendCancelNotification(
 	_ *domain.ClaimNotificationData,
 ) error {
 	return nil
+}
+
+func TestVerifyListingPickupCode(t *testing.T) {
+	for _, tc := range []struct {
+		name         string
+		code         string
+		role         userv1.UserRole
+		otherOwner   bool
+		otherListing bool
+		expired      bool
+		status       domain.ClaimStatus
+		wantErr      error
+	}{
+		{name: "owner verifies leading-zero code", code: "012345", role: userv1.UserRole_USER_ROLE_DONOR},
+		{name: "wrong code", code: "999999", role: userv1.UserRole_USER_ROLE_DONOR, wantErr: domain.ErrInvalidInput},
+		{name: "malformed code", code: "01234x", role: userv1.UserRole_USER_ROLE_DONOR, wantErr: domain.ErrInvalidInput},
+		{name: "other donor", code: "012345", role: userv1.UserRole_USER_ROLE_DONOR, otherOwner: true, wantErr: domain.ErrForbidden},
+		{name: "recipient cannot verify", code: "012345", role: userv1.UserRole_USER_ROLE_RECIPIENT, wantErr: domain.ErrForbidden},
+		{name: "code for another listing", code: "012345", role: userv1.UserRole_USER_ROLE_DONOR, otherListing: true, wantErr: domain.ErrInvalidInput},
+		{name: "expired code", code: "012345", role: userv1.UserRole_USER_ROLE_DONOR, expired: true, wantErr: domain.ErrClaimExpired},
+		{name: "already collected", code: "012345", role: userv1.UserRole_USER_ROLE_DONOR, status: domain.StatusPickedUp, wantErr: domain.ErrClaimAlreadyVerified},
+		{name: "cancelled", code: "012345", role: userv1.UserRole_USER_ROLE_DONOR, status: domain.StatusCancelled, wantErr: domain.ErrClaimAlreadyVerified},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			userID, listingID, claimID := uuid.New(), uuid.New(), uuid.New()
+			claim := &domain.FoodClaim{ClaimID: claimID, RequestID: uuid.New(), FoodListingID: listingID,
+				ClaimCode: "012345", ClaimedQuantity: 2, Status: domain.StatusWaitingForPickup, CodeExpiresAt: time.Now().Add(time.Hour)}
+			if tc.expired {
+				claim.CodeExpiresAt = time.Now().Add(-time.Minute)
+			}
+			if tc.status != "" {
+				claim.Status = tc.status
+			}
+			if tc.otherListing {
+				claim.FoodListingID = uuid.New()
+			}
+			ownerID := userID
+			if tc.otherOwner {
+				ownerID = uuid.New()
+			}
+			repo := &claimRepoMock{claims: map[uuid.UUID]*domain.FoodClaim{claimID: claim}}
+			requests := &requestMock{data: &requestv1.FoodRequest{RequestId: claim.RequestID.String()}}
+			service := NewClaimUseCase(repo, &claimUserMock{user: &userv1.GetUserResponse{Role: tc.role}}, requests,
+				&claimFoodMock{listing: &foodv1.FoodListing{FoodListingId: listingID.String(), UserId: ownerID.String()}}, &mailMock{})
+			result, err := service.VerifyListingPickupCode(context.Background(), userID, listingID, tc.code)
+			if !errors.Is(err, tc.wantErr) {
+				t.Fatalf("got error %v, want %v", err, tc.wantErr)
+			}
+			if tc.wantErr == nil {
+				if result == nil || result.ClaimID != claimID || result.Status != domain.StatusPickedUp || !requests.completed {
+					t.Fatal("matching claim and request must be completed")
+				}
+			} else if requests.completed {
+				t.Fatal("rejected pickup must not complete the request")
+			}
+		})
+	}
 }
 
 func TestCreateClaim(t *testing.T) {
@@ -399,9 +472,8 @@ func TestCancelClaim(t *testing.T) {
 	}
 
 	if !reqClient.markedSearch {
-	t.Fatal("request was not marked as searching")
+		t.Fatal("request was not marked as searching")
 	}
-
 
 	if reqClient.data.Status != requestv1.RequestStatus_REQUEST_STATUS_SEARCHING {
 		t.Fatalf(

@@ -258,6 +258,40 @@ func writeError(c echo.Context, err error) error {
 	})
 }
 
+// VerifyListingPickupCode godoc
+// @Summary Verify pickup using a listing and recipient code
+// @Description Only the listing's donor can verify its pickup. No claim ID is required.
+// @Tags Claims
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.VerifyListingPickupRequest true "Listing and pickup code"
+// @Success 200 {object} dto.HandlerResponse{responseData=domain.FoodClaim}
+// @Failure 400 {object} dto.HandlerResponse
+// @Failure 403 {object} dto.HandlerResponse
+// @Router /claims/verify-pickup [post]
+func (h *HTTPHandler) VerifyListingPickupCode(c echo.Context) error {
+	userID, err := currentUserID(c)
+	if err != nil {
+		return writeError(c, err)
+	}
+	var input dto.VerifyListingPickupRequest
+	if err := c.Bind(&input); err != nil {
+		return writeError(c, domain.ErrInvalidInput)
+	}
+	listingID, err := uuid.Parse(input.FoodListingID)
+	if err != nil {
+		return writeError(c, domain.ErrInvalidInput)
+	}
+	claim, err := h.claims.VerifyListingPickupCode(c.Request().Context(), userID, listingID, input.ClaimCode)
+	if err != nil {
+		return writeError(c, err)
+	}
+	return c.JSON(http.StatusOK, dto.HandlerResponse{
+		ResponseCode: "00", ResponseMessage: "pickup verified successfully", ResponseData: claim,
+	})
+}
+
 // ListClaims godoc
 // @Summary List claims for the current user
 // @Description Return all claims belonging to the authenticated user

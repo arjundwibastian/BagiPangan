@@ -53,6 +53,20 @@ func (r *claimRepository) GetByID(
 	return &claim, nil
 }
 
+func (r *claimRepository) GetByListingAndCode(ctx context.Context, listingID uuid.UUID, code string) (*domain.FoodClaim, error) {
+	var claim domain.FoodClaim
+	err := r.db.WithContext(ctx).
+		Where("food_listing_id = ? AND claim_code = ?", listingID, code).
+		First(&claim).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, domain.ErrInvalidInput
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &claim, nil
+}
+
 func (r *claimRepository) ListByRequestIDs(
 	ctx context.Context,
 	requestIDs []uuid.UUID,

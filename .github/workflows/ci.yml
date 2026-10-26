@@ -45,6 +45,8 @@ jobs:
     name: config + images
     runs-on: ubuntu-latest
     needs: test
+    env:
+      CLOUDFLARE_TUNNEL_TOKEN: ci-placeholder-not-a-real-token
     steps:
       - uses: actions/checkout@v4
 

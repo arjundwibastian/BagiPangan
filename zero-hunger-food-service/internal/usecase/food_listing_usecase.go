@@ -73,6 +73,13 @@ func (uc *foodListingUseCase) NewFoodListing(ctx context.Context, userID uuid.UU
 	return newFoodListing, nil
 }
 
+func (uc *foodListingUseCase) ListOwnFoodListings(ctx context.Context, userID uuid.UUID) ([]domain.FoodListing, error) {
+	if userID == uuid.Nil {
+		return nil, domain.ErrInvalidInput
+	}
+	return uc.foodListingRepo.ListByUser(ctx, userID)
+}
+
 func (uc *foodListingUseCase) GetActiveFoodListing(ctx context.Context) (*[]domain.FoodListing, error) {
 	status := string(domain.StatusAvailable)
 	foodListing, err := uc.foodListingRepo.GetActiveFoodListing(ctx, status)

@@ -8,6 +8,7 @@ import (
 )
 
 type FoodListingUseCase interface {
+	ListOwnFoodListings(ctx context.Context, userID uuid.UUID) ([]FoodListing, error)
 	NewFoodListing(ctx context.Context, userID uuid.UUID, req dto.CreateFoodListingRequest) (*FoodListing, error)
 	GetActiveFoodListing(ctx context.Context) (*[]FoodListing, error)
 	SearchNearbyFoodListing(ctx context.Context, requestID uuid.UUID) (*[]FoodListing, error)

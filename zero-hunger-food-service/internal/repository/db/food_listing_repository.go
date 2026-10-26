@@ -27,6 +27,13 @@ func (r *gormFoodListingRepo) InsertNewFoodListing(ctx context.Context, foods *d
 	return foods, nil
 }
 
+func (r *gormFoodListingRepo) ListByUser(ctx context.Context, userID uuid.UUID) ([]domain.FoodListing, error) {
+	listings := make([]domain.FoodListing, 0)
+	err := r.db.WithContext(ctx).Where("user_id = ?", userID).
+		Order("created_at DESC").Find(&listings).Error
+	return listings, err
+}
+
 func (r *gormFoodListingRepo) GetActiveFoodListing(ctx context.Context, status string) (*[]domain.FoodListing, error) {
 	var foodListing []domain.FoodListing
 	now := time.Now()

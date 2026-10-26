@@ -13,6 +13,7 @@ type CreateClaimInput struct {
 }
 
 type ClaimUseCase interface {
+	VerifyListingPickupCode(ctx context.Context, userID uuid.UUID, listingID uuid.UUID, code string) (*FoodClaim, error)
 	CreateClaim(
 		ctx context.Context,
 		userID uuid.UUID,
