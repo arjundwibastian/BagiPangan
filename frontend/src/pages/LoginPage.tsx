@@ -48,7 +48,6 @@ export function LoginPage({
         <p className="auth-eyebrow">BagiPangan</p>
         <h1 className="auth-title">Welcome back</h1>
         <p className="auth-subtitle">Share extra food with people nearby.</p>
-        <p className="auth-subtitle">Share extra food with people nearby.</p>
 
         {notice && <p className="success-note">{notice}</p>}
 
