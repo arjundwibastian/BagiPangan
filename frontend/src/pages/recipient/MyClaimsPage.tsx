@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { cancelClaim, getClaim } from "../../api/claims";
+import { cancelClaim, getClaimList } from "../../api/claims";
 import { ApiError } from "../../api/client";
-import { getClaimIds, removeClaimId } from "../../lib/claims";
 import type { FoodClaim } from "../../types/claim";
 import type { User } from "../../types/auth";
 
@@ -14,6 +13,38 @@ export function MyClaimsPage({ user }: MyClaimsPageProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+
+    getClaimList()
+      .then((results) => {
+        if (cancelled) return;
+        setClaims(results);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(
+          err instanceof ApiError ? err.message : "Cannot reach the server.",
+        );
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user.user_id, reloadKey]);
+
+  /*
+  Previous loader, kept for reference: fetched each locally saved claim ID
+  separately. The active loader above fetches the user's claims in one request.
+  This previous version used these imports:
+  import { getClaim } from "../../api/claims";
+  import { getClaimIds, removeClaimId } from "../../lib/claims";
 
   useEffect(() => {
     let cancelled = false;
@@ -59,6 +90,7 @@ export function MyClaimsPage({ user }: MyClaimsPageProps) {
       cancelled = true;
     };
   }, [user.user_id, reloadKey]);
+  */
 
   async function handleCancel(id: string) {
     setError("");
