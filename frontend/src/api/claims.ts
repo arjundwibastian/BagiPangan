@@ -16,7 +16,14 @@ export function getClaim(id: string): Promise<FoodClaim> {
   return request<FoodClaim>(`/claims/${id}`);
 }
 
-export function verifyListingPickup(listingId: string, code: string): Promise<FoodClaim> {
+export function getClaimList(): Promise<FoodClaim[]> {
+  return request<FoodClaim[]>(`/claims`);
+}
+
+export function verifyListingPickup(
+  listingId: string,
+  code: string,
+): Promise<FoodClaim> {
   return request<FoodClaim>("/claims/verify-pickup", {
     method: "POST",
     body: JSON.stringify({ food_listing_id: listingId, claim_code: code }),
