@@ -2,6 +2,8 @@
 
 Local orchestration and end-to-end test assets for the Zero Hunger services.
 
+For isolated development, use the standalone [disposable local stack](../docs/local-testing.md). The default deployment Compose file described below can use real external databases and a public tunnel; do not use it for audit fixtures.
+
 ## Running the stack
 
 Compose runs the application services against a PostgreSQL host you manage; it does not create PostgreSQL containers or run migrations. Create databases `user_db`, `food_db`, `request_db`, and `claim_db`, then apply each service migration:
@@ -29,7 +31,7 @@ The service ports are:
 | Request | 8083 | 50053 |
 | Claim | 8084 | — |
 
-Container-to-container gRPC addresses are `user-service:50051`, `request-service:50053`, and `food-service:50052`; host clients use the localhost ports above.
+Container-to-container gRPC addresses are `user-service:50051`, `request-service:50053`, and `food-service:50052`. These gRPC ports are not published to the host by either Compose file; the HTTP ports bind to loopback.
 
 Verify that each service logs its listener, then import `docs/Zero Hunger Local.postman_environment.json`, select it, and run `docs/Zero Hunger E2E.postman_collection.json` in order.
 
