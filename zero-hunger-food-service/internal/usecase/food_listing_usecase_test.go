@@ -2,14 +2,63 @@ package usecase
 
 import (
 	"context"
+	"errors"
+	"math"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
+	requestv1 "github.com/zero-hunger/contracts/gen/request/v1"
 	userv1 "github.com/zero-hunger/contracts/gen/user/v1"
 	"github.com/zero-hunger/food-service/internal/domain"
 	"github.com/zero-hunger/food-service/internal/dto"
 )
+
+func TestNearbyRejectsNonFiniteNumbers(t *testing.T) {
+	svc := NewfoodListingUseCase(nil, nil, nil)
+	for _, values := range [][3]float64{{math.NaN(), 0, 1}, {0, math.NaN(), 1}, {0, 0, math.NaN()}, {math.Inf(1), 0, 1}, {0, math.Inf(-1), 1}, {0, 0, math.Inf(1)}} {
+		if _, err := svc.SearchNearbyFoodListings(context.Background(), values[0], values[1], values[2]); !errors.Is(err, domain.ErrInvalidInput) {
+			t.Fatalf("%v: %v", values, err)
+		}
+	}
+}
+
+type nearbyRequestMock struct{ response *requestv1.GetRequestResponse }
+
+func (m nearbyRequestMock) GetRequest(context.Context, string) (*requestv1.GetRequestResponse, error) {
+	return m.response, nil
+}
+
+func TestNearbyRequestOwnership(t *testing.T) {
+	owner := uuid.New()
+	for _, tc := range []struct {
+		name    string
+		caller  uuid.UUID
+		missing bool
+		want    error
+	}{
+		{name: "owner", caller: owner},
+		{name: "other user", caller: uuid.New(), want: domain.ErrForbidden},
+		{name: "missing request", caller: owner, missing: true, want: domain.ErrNotFound},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			response := &requestv1.GetRequestResponse{}
+			if !tc.missing {
+				response.Request = &requestv1.FoodRequest{UserId: owner.String(), RadiusKm: 5}
+			}
+			// A nil repository makes accidental searches on denied access fail loudly.
+			var repo domain.FoodListingRepository
+			if tc.want == nil {
+				repo = &repoMock{}
+			}
+			svc := NewfoodListingUseCase(repo, nil, nearbyRequestMock{response: response})
+			_, err := svc.SearchNearbyFoodListing(context.Background(), tc.caller, uuid.New())
+			if !errors.Is(err, tc.want) {
+				t.Fatalf("got %v, want %v", err, tc.want)
+			}
+		})
+	}
+}
 
 type repoMock struct {
 	foods    []domain.FoodListing
@@ -170,12 +219,13 @@ func TestCreateFoodListing(t *testing.T) {
 
 	description := "Fresh food"
 	now := time.Now()
+	latitude, longitude := -6.2, 106.816666
 
 	input := dto.CreateFoodListingRequest{
 		Title:          "Nasi Kotak",
 		Description:    &description,
-		Latitude:       -6.2,
-		Longitude:      106.816666,
+		Latitude:       &latitude,
+		Longitude:      &longitude,
 		FoodType:       "cooked_food",
 		Quantity:       10,
 		AvailableFrom:  now.Add(time.Minute),

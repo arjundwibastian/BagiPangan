@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"math"
 	"strings"
 	"time"
 
@@ -23,6 +24,9 @@ func NewfoodListingUseCase(foodListingRepo domain.FoodListingRepository, userSer
 }
 
 func (uc *foodListingUseCase) NewFoodListing(ctx context.Context, userID uuid.UUID, req dto.CreateFoodListingRequest) (*domain.FoodListing, error) {
+	if req.Latitude == nil || req.Longitude == nil {
+		return nil, domain.ErrInvalidInput
+	}
 	user, err := uc.userService.GetUser(ctx, userID.String())
 	if err != nil {
 		return nil, err
@@ -58,8 +62,8 @@ func (uc *foodListingUseCase) NewFoodListing(ctx context.Context, userID uuid.UU
 		UserID:         userID,
 		Title:          req.Title,
 		Description:    req.Description,
-		Latitude:       req.Latitude,
-		Longitude:      req.Longitude,
+		Latitude:       *req.Latitude,
+		Longitude:      *req.Longitude,
 		FoodType:       foodType,
 		Quantity:       req.Quantity,
 		AvailableFrom:  req.AvailableFrom,
@@ -89,16 +93,25 @@ func (uc *foodListingUseCase) GetActiveFoodListing(ctx context.Context) (*[]doma
 	return foodListing, nil
 }
 
-func (uc *foodListingUseCase) SearchNearbyFoodListing(ctx context.Context, requestID uuid.UUID) (*[]domain.FoodListing, error) {
+func (uc *foodListingUseCase) SearchNearbyFoodListing(ctx context.Context, userID, requestID uuid.UUID) (*[]domain.FoodListing, error) {
+	if userID == uuid.Nil || requestID == uuid.Nil {
+		return nil, domain.ErrInvalidInput
+	}
 	request, err := uc.requestService.GetRequest(ctx, requestID.String())
 	if err != nil {
 		return nil, err
+	}
+	if request.GetRequest() == nil {
+		return nil, domain.ErrNotFound
+	}
+	if request.GetRequest().GetUserId() != userID.String() {
+		return nil, domain.ErrForbidden
 	}
 	return uc.SearchNearbyFoodListings(ctx, request.Request.GetLatitude(), request.Request.GetLongitude(), request.Request.GetRadiusKm())
 }
 
 func (uc *foodListingUseCase) SearchNearbyFoodListings(ctx context.Context, latitude, longitude, radiusKM float64) (*[]domain.FoodListing, error) {
-	if latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180 || radiusKM <= 0 {
+	if math.IsNaN(latitude) || math.IsInf(latitude, 0) || math.IsNaN(longitude) || math.IsInf(longitude, 0) || math.IsNaN(radiusKM) || math.IsInf(radiusKM, 0) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180 || radiusKM <= 0 {
 		return nil, domain.ErrInvalidInput
 	}
 	status := string(domain.StatusAvailable)
@@ -106,7 +119,7 @@ func (uc *foodListingUseCase) SearchNearbyFoodListings(ctx context.Context, lati
 	if err != nil {
 		return nil, err
 	}
-	var sortedNearbyListing []domain.FoodListing
+	sortedNearbyListing := make([]domain.FoodListing, 0)
 	for _, listing := range *activeListings {
 		distanceBetween := distanceBetweenListings(latitude, longitude, listing.Latitude, listing.Longitude)
 		if distanceBetween <= radiusKM {
@@ -205,13 +218,14 @@ func (uc *foodListingUseCase) UpdateFoodListing(
 	}
 
 	update := domain.FoodListingUpdate{
-		Title:          req.Title,
-		Description:    req.Description,
-		Latitude:       req.Latitude,
-		Longitude:      req.Longitude,
-		Quantity:       req.Quantity,
-		AvailableFrom:  req.AvailableFrom,
-		AvailableUntil: req.AvailableUntil,
+		ExpectedUpdatedAt: listing.UpdatedAt,
+		Title:             req.Title,
+		Description:       req.Description,
+		Latitude:          req.Latitude,
+		Longitude:         req.Longitude,
+		Quantity:          req.Quantity,
+		AvailableFrom:     req.AvailableFrom,
+		AvailableUntil:    req.AvailableUntil,
 	}
 
 	if req.Title != nil && strings.TrimSpace(*req.Title) == "" {
