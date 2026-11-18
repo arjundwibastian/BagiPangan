@@ -55,8 +55,10 @@ paths:
       responses: { '200': { $ref: '#/components/responses/Success' }, '400': { $ref: '#/components/responses/Error' } }
   /api/v1/users/{user_id}:
     get:
+      summary: Get your own profile (administrators may get any profile)
+      security: [{ bearerAuth: [] }]
       parameters: [{ in: path, name: user_id, required: true, schema: { type: string, format: uuid } }]
-      responses: { '200': { $ref: '#/components/responses/Success' }, '404': { $ref: '#/components/responses/Error' } }
+      responses: { '200': { $ref: '#/components/responses/Success' }, '401': { $ref: '#/components/responses/Error' }, '403': { $ref: '#/components/responses/Error' }, '404': { $ref: '#/components/responses/Error' } }
 components:
   securitySchemes:
     bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }

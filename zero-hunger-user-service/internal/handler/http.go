@@ -103,13 +103,16 @@ func (h *HTTPHandler) UpdateMe(c echo.Context) error {
 	return Success(c, 200, "profile updated successfully", u)
 }
 func (h *HTTPHandler) GetUser(c echo.Context) error {
-	_, _, err := h.authID(c)
+	callerID, role, err := h.authID(c)
 	if err != nil {
 		return Error(c, err)
 	}
 	id, err := uuid.Parse(c.Param("user_id"))
 	if err != nil {
 		return Error(c, domain.ErrInvalidInput)
+	}
+	if callerID != id && role != domain.RoleAdmin {
+		return Error(c, domain.ErrForbidden)
 	}
 	u, err := h.users.GetByID(c.Request().Context(), id)
 	if err != nil {
