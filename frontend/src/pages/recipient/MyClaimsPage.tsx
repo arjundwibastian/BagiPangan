@@ -16,9 +16,6 @@ export function MyClaimsPage({ user }: MyClaimsPageProps) {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError("");
-
     getClaimList()
       .then((results) => {
         if (cancelled) return;
@@ -96,12 +93,19 @@ export function MyClaimsPage({ user }: MyClaimsPageProps) {
     setError("");
     try {
       await cancelClaim(id);
-      setReloadKey((k) => k + 1);
+      refresh();
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Cannot reach the server.",
       );
     }
+  }
+
+  function refresh() {
+    setLoading(true);
+    setError("");
+    setClaims([]);
+    setReloadKey((k) => k + 1);
   }
 
   return (
@@ -115,7 +119,8 @@ export function MyClaimsPage({ user }: MyClaimsPageProps) {
         <button
           type="button"
           className="btn-secondary"
-          onClick={() => setReloadKey((k) => k + 1)}
+          onClick={refresh}
+          disabled={loading}
         >
           Refresh
         </button>

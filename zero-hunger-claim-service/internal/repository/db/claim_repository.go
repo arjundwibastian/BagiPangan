@@ -136,19 +136,23 @@ func (r *claimRepository) VerifyPickupCode(
 		return nil, err
 	}
 
+	if claim.ClaimCode != code {
+		tx.Rollback()
+		return nil, domain.ErrInvalidInput
+	}
+	// A matching retry repairs downstream completion without collecting twice.
+	// Expiry prevents a new pickup; it must not prevent retrying an old one.
+	if claim.Status == domain.StatusPickedUp {
+		tx.Rollback()
+		return &claim, nil
+	}
 	if claim.Status != domain.StatusWaitingForPickup {
 		tx.Rollback()
 		return nil, domain.ErrClaimAlreadyVerified
 	}
-
-	if time.Now().After(claim.CodeExpiresAt) {
+	if !time.Now().Before(claim.CodeExpiresAt) {
 		tx.Rollback()
 		return nil, domain.ErrClaimExpired
-	}
-
-	if claim.ClaimCode != code {
-		tx.Rollback()
-		return nil, domain.ErrInvalidInput
 	}
 
 	now := time.Now()

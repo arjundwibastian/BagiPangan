@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"errors"
+	"math"
 	"time"
 
 	"github.com/google/uuid"
@@ -37,7 +38,7 @@ func (r *gormFoodListingRepo) ListByUser(ctx context.Context, userID uuid.UUID) 
 func (r *gormFoodListingRepo) GetActiveFoodListing(ctx context.Context, status string) (*[]domain.FoodListing, error) {
 	var foodListing []domain.FoodListing
 	now := time.Now()
-	err := r.db.Model(&foodListing).Where("status = ? AND available_from <= ? AND available_until > ? AND quantity > 0", status, now, now).Find(&foodListing).Error
+	err := r.db.WithContext(ctx).Model(&foodListing).Where("status = ? AND available_from <= ? AND available_until > ? AND quantity > 0", status, now, now).Find(&foodListing).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, domain.ErrNotFound
@@ -79,8 +80,9 @@ func (r *gormFoodListingRepo) ReserveFoodQuantity(
 	}
 
 	defer func() {
-		if recover() != nil {
+		if p := recover(); p != nil {
 			tx.Rollback()
+			panic(p)
 		}
 	}()
 
@@ -156,8 +158,9 @@ func (r *gormFoodListingRepo) ReleaseFoodQuantity(
 	}
 
 	defer func() {
-		if recover() != nil {
+		if p := recover(); p != nil {
 			tx.Rollback()
+			panic(p)
 		}
 	}()
 
@@ -179,7 +182,7 @@ func (r *gormFoodListingRepo) ReleaseFoodQuantity(
 		return nil, err
 	}
 
-	if quantity <= 0 {
+	if quantity <= 0 || int64(listing.Quantity)+int64(quantity) > math.MaxInt32 {
 		tx.Rollback()
 		return nil, domain.ErrInvalidInput
 	}
@@ -187,7 +190,8 @@ func (r *gormFoodListingRepo) ReleaseFoodQuantity(
 	newQuantity := listing.Quantity + quantity
 	newStatus := domain.StatusAvailable
 
-	if time.Now().After(listing.AvailableUntil) {
+	// "expired" also represents donor cancellation; releasing must not reopen it.
+	if listing.Status == domain.StatusExpired || !time.Now().Before(listing.AvailableUntil) {
 		newStatus = domain.StatusExpired
 	}
 
@@ -216,24 +220,25 @@ func (r *gormFoodListingRepo) UpdateExpiredAndClaimedListings(ctx context.Contex
 	result := r.db.
 		WithContext(ctx).
 		Model(&domain.FoodListing{}).
-		Where("status = ?", domain.StatusAvailable).
+		Where("status IN ?", []domain.ListingStatus{domain.StatusAvailable, domain.StatusClaimed}).
 		Where(
-			"quantity = ? OR available_until <= CURRENT_TIMESTAMP",
+			"(status = ? AND quantity = ?) OR available_until <= CURRENT_TIMESTAMP",
+			domain.StatusAvailable,
 			0,
 		).
 		Updates(map[string]interface{}{
 			"status": gorm.Expr(`
 				CASE
-					WHEN quantity = ?
-						THEN ?::listing_status
 					WHEN available_until <= CURRENT_TIMESTAMP
+						THEN ?::listing_status
+					WHEN quantity = ?
 						THEN ?::listing_status
 					ELSE status
 				END
 			`,
+				string(domain.StatusExpired),
 				0,
 				string(domain.StatusClaimed),
-				string(domain.StatusExpired),
 			),
 			"updated_at": gorm.Expr("CURRENT_TIMESTAMP"),
 		})
@@ -277,7 +282,7 @@ func (r *gormFoodListingRepo) UpdateFoodListing(
 	result := r.db.
 		WithContext(ctx).
 		Model(&domain.FoodListing{}).
-		Where("food_listing_id = ?", id).
+		Where("food_listing_id = ? AND status = ? AND updated_at = ?", id, domain.StatusAvailable, update.ExpectedUpdatedAt).
 		Updates(updates)
 
 	if result.Error != nil {
@@ -285,7 +290,7 @@ func (r *gormFoodListingRepo) UpdateFoodListing(
 	}
 
 	if result.RowsAffected == 0 {
-		return nil, domain.ErrNotFound
+		return nil, domain.ErrListingUnavailable
 	}
 
 	return r.GetFoodListingByID(ctx, id)
@@ -298,7 +303,7 @@ func (r *gormFoodListingRepo) CancelFoodListing(
 	result := r.db.
 		WithContext(ctx).
 		Model(&domain.FoodListing{}).
-		Where("food_listing_id = ?", id).
+		Where("food_listing_id = ? AND status = ?", id, domain.StatusAvailable).
 		Updates(map[string]interface{}{
 			"status":     domain.StatusExpired,
 			"updated_at": time.Now(),
@@ -309,7 +314,7 @@ func (r *gormFoodListingRepo) CancelFoodListing(
 	}
 
 	if result.RowsAffected == 0 {
-		return nil, domain.ErrNotFound
+		return nil, domain.ErrListingUnavailable
 	}
 
 	return r.GetFoodListingByID(ctx, id)

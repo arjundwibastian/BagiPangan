@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"math"
 	"strings"
 	"time"
 
@@ -33,7 +34,7 @@ type CreateResult struct {
 }
 
 func (s *RequestService) Create(ctx context.Context, in CreateInput) (CreateResult, error) {
-	if in.UserID == uuid.Nil || in.Latitude < -90 || in.Latitude > 90 || in.Longitude < -180 || in.Longitude > 180 || in.RadiusKM <= 0 {
+	if in.UserID == uuid.Nil || math.IsNaN(in.Latitude) || math.IsInf(in.Latitude, 0) || math.IsNaN(in.Longitude) || math.IsInf(in.Longitude, 0) || math.IsNaN(in.RadiusKM) || math.IsInf(in.RadiusKM, 0) || in.Latitude < -90 || in.Latitude > 90 || in.Longitude < -180 || in.Longitude > 180 || in.RadiusKM <= 0 {
 		return CreateResult{}, domain.ErrInvalidInput
 	}
 
@@ -143,6 +144,9 @@ func (s *RequestService) MarkCompleted(ctx context.Context, id, claimID uuid.UUI
 		return domain.FoodRequest{}, err
 	}
 
+	if r.ClaimID != nil && *r.ClaimID == claimID && r.Status == domain.StatusCompleted {
+		return r, nil
+	}
 	if r.Status != domain.StatusClaimed || r.ClaimID == nil || *r.ClaimID != claimID {
 		return domain.FoodRequest{}, domain.ErrConflict
 	}

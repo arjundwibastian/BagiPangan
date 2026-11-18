@@ -3,7 +3,6 @@ import { listFoodRequests } from "../../api/requests";
 import { listNearbyFoodListings } from "../../api/food";
 import { createClaim } from "../../api/claims";
 import { ApiError } from "../../api/client";
-import { addClaimId } from "../../lib/claims";
 import type { FoodRequest } from "../../types/request";
 import type { FoodListing } from "../../types/food";
 import type { FoodClaim } from "../../types/claim";
@@ -60,31 +59,36 @@ export function NearbyPage({ user }: NearbyPageProps) {
       const data = await listNearbyFoodListings(requestId);
       setListings(data ?? []);
     } catch (err) {
-      if (err instanceof ApiError && err.code === "01") {
-        setListings([]);
-      } else {
-        setError(
-          err instanceof ApiError ? err.message : "Cannot reach the server.",
-        );
-      }
+      setError(err instanceof ApiError ? err.message : "Cannot reach the server.");
     } finally {
       setLoading(false);
     }
   }
 
   async function handleClaim(listing: FoodListing) {
+    if (claimingId || loading || !requestId) return;
     setError("");
     setClaimed(null);
+    const quantity = Number(quantities[listing.food_listing_id] ?? "1");
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > listing.quantity) {
+      setError("Enter a whole quantity between 1 and the available stock.");
+      return;
+    }
     setClaimingId(listing.food_listing_id);
 
     try {
       const claim = await createClaim({
         request_id: requestId,
         food_listing_id: listing.food_listing_id,
-        claimed_quantity: Number(quantities[listing.food_listing_id] ?? "1"),
+        claimed_quantity: quantity,
       });
-      addClaimId(user.user_id, claim.claim_id);
       setClaimed(claim);
+      // One request can back only one claim. Its old search results are stale.
+      const remaining = requests.filter((request) => request.request_id !== requestId);
+      setRequests(remaining);
+      setRequestId(remaining[0]?.request_id ?? "");
+      setListings([]);
+      setSearched(false);
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Cannot reach the server.",
@@ -114,7 +118,13 @@ export function NearbyPage({ user }: NearbyPageProps) {
           <select
             className="field-input"
             value={requestId}
-            onChange={(e) => setRequestId(e.target.value)}
+            onChange={(e) => {
+              setRequestId(e.target.value);
+              setListings([]);
+              setSearched(false);
+              setClaimed(null);
+            }}
+            disabled={loading || claimingId !== ""}
           >
             {requests.map((request) => (
               <option key={request.request_id} value={request.request_id}>
@@ -126,7 +136,7 @@ export function NearbyPage({ user }: NearbyPageProps) {
             type="button"
             className="btn-primary"
             onClick={handleSearch}
-            disabled={loading}
+            disabled={loading || claimingId !== ""}
           >
             {loading ? "Searching..." : "Search"}
           </button>

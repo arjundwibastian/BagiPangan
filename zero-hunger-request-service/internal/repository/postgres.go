@@ -64,7 +64,7 @@ func (r *RequestRepository) MarkClaimed(ctx context.Context, id, claimID uuid.UU
 func (r *RequestRepository) MarkCompleted(ctx context.Context, id, claimID uuid.UUID) (domain.FoodRequest, error) {
 	return r.update(ctx, `
 		UPDATE food_requests SET status='completed',updated_at=CURRENT_TIMESTAMP
-		WHERE request_id=$1 AND claim_id=$2 AND status='claimed'
+		WHERE request_id=$1 AND claim_id=$2 AND status IN ('claimed','completed')
 		RETURNING `+columns, id, claimID)
 }
 

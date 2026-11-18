@@ -1,0 +1,121 @@
+# Standalone disposable stack. Do not merge with docker-compose.yml.
+# Every credential here is public test data; no environment interpolation.
+name: bagipangan-local
+
+x-auth: &auth
+  JWT_SECRET: bagipangan-local-test-only-not-for-deployment
+
+x-db: &db
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_USER: bagipangan_test
+  DB_PASSWORD: local-test-only
+  DB_SSLMODE: disable
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: bagipangan_test
+      POSTGRES_PASSWORD: local-test-only
+      POSTGRES_DB: postgres
+    tmpfs:
+      - /var/lib/postgresql/data
+    volumes:
+      - ./local-init.sql:/docker-entrypoint-initdb.d/001_databases.sql:ro
+      - ../zero-hunger-user-service/migrations:/migrations/user:ro
+      - ../zero-hunger-request-service/migrations:/migrations/request:ro
+      - ../zero-hunger-food-service/migrations:/migrations/food:ro
+      - ../zero-hunger-claim-service/migrations:/migrations/claim:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U bagipangan_test -d postgres"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  user-service:
+    build:
+      context: ..
+      dockerfile: zero-hunger-user-service/Dockerfile
+    environment:
+      <<: *auth
+      SERVER_PORT: "8081"
+      GRPC_PORT: "50051"
+      DATABASE_URL: postgres://bagipangan_test:local-test-only@postgres:5432/bagipangan_user_test?sslmode=disable
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  request-service:
+    build:
+      context: ..
+      dockerfile: zero-hunger-request-service/Dockerfile
+    environment:
+      <<: *auth
+      SERVER_PORT: "8083"
+      GRPC_PORT: "50053"
+      DATABASE_URL: postgres://bagipangan_test:local-test-only@postgres:5432/bagipangan_request_test?sslmode=disable
+      USER_SERVICE_GRPC_ADDRESS: user-service:50051
+    depends_on:
+      postgres: { condition: service_healthy }
+      user-service: { condition: service_started }
+
+  food-service:
+    build:
+      context: ..
+      dockerfile: zero-hunger-food-service/Dockerfile
+    environment:
+      <<: [*auth, *db]
+      PORT: "8082"
+      GRPC_PORT: "50052"
+      DB_NAME: bagipangan_food_test
+      USER_SERVICE_GRPC_ADDRESS: user-service:50051
+      REQUEST_SERVICE_GRPC_ADDRESS: request-service:50053
+    depends_on:
+      postgres: { condition: service_healthy }
+      user-service: { condition: service_started }
+      request-service: { condition: service_started }
+
+  claim-service:
+    build:
+      context: ..
+      dockerfile: zero-hunger-claim-service/Dockerfile
+    environment:
+      <<: [*auth, *db]
+      PORT: "8084"
+      DB_NAME: bagipangan_claim_test
+      RESEND_API_KEY: local-invalid-test-key
+      USER_SERVICE_GRPC_ADDRESS: user-service:50051
+      REQUEST_SERVICE_GRPC_ADDRESS: request-service:50053
+      FOOD_SERVICE_GRPC_ADDRESS: food-service:50052
+    depends_on:
+      postgres: { condition: service_healthy }
+      food-service: { condition: service_started }
+      request-service: { condition: service_started }
+      user-service: { condition: service_started }
+
+  # Internal-only containers cannot publish host ports. Only this TCP proxy
+  # joins the host-access network; app/database containers retain no egress.
+  gateway:
+    image: haproxy:3.2-alpine
+    volumes:
+      - ./local-haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "127.0.0.1:18081:8081"
+      - "127.0.0.1:18082:8082"
+      - "127.0.0.1:18083:8083"
+      - "127.0.0.1:18084:8084"
+      - "127.0.0.1:55433:55432"
+    networks: [default, host-access]
+    depends_on:
+      postgres: { condition: service_healthy }
+      user-service: { condition: service_started }
+      request-service: { condition: service_started }
+      food-service: { condition: service_started }
+      claim-service: { condition: service_started }
+
+# Backend egress (including email) stays blocked. Only gateway has a normal
+# bridge, and its published listeners bind exclusively to the host loopback.
+networks:
+  default:
+    internal: true
+  host-access: {}

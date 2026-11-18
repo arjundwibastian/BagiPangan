@@ -8,14 +8,15 @@ import (
 )
 
 type FoodListingUpdate struct {
-	Title          *string
-	Description    *string
-	Latitude       *float64
-	Longitude      *float64
-	FoodType       *FoodCategory
-	Quantity       *int32
-	AvailableFrom  *time.Time
-	AvailableUntil *time.Time
+	ExpectedUpdatedAt time.Time
+	Title             *string
+	Description       *string
+	Latitude          *float64
+	Longitude         *float64
+	FoodType          *FoodCategory
+	Quantity          *int32
+	AvailableFrom     *time.Time
+	AvailableUntil    *time.Time
 }
 
 type FoodListingRepository interface {

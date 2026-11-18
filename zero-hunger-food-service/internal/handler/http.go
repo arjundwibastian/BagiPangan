@@ -187,7 +187,7 @@ func (h *FoodListingHandler) ListOwnFoodListingsHandler(c echo.Context) error {
 // @Failure 500 {object} dto.HandlerResponse
 // @Router /food-listings/nearby [get]
 func (h *FoodListingHandler) GetNearbyFoodListingHandler(c echo.Context) error {
-	_, err := uuid.Parse(c.Get("user_id").(string))
+	userID, err := uuid.Parse(c.Get("user_id").(string))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, dto.HandlerResponse{
 			ResponseCode:    "01",
@@ -216,29 +216,10 @@ func (h *FoodListingHandler) GetNearbyFoodListingHandler(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), 10*time.Second)
 	defer cancel()
 
-	foods, err := h.foodListingUC.SearchNearbyFoodListing(ctx, parsedRequestID)
+	foods, err := h.foodListingUC.SearchNearbyFoodListing(ctx, userID, parsedRequestID)
 	if err != nil {
-		if errors.Is(err, domain.ErrNotFound) {
-			return c.JSON(http.StatusNotFound, dto.HandlerResponse{
-				ResponseCode:    "01",
-				ResponseMessage: err.Error(),
-				ResponseData:    nil,
-			})
-		}
-		return c.JSON(http.StatusInternalServerError, dto.HandlerResponse{
-			ResponseCode:    "01",
-			ResponseMessage: err.Error(),
-			ResponseData:    nil,
-		})
+		return writeFoodListingError(c, err)
 	}
-	if len(*foods) == 0 {
-		return c.JSON(http.StatusNotFound, dto.HandlerResponse{
-			ResponseCode:    "01",
-			ResponseMessage: "Error: no nearby listing found",
-			ResponseData:    nil,
-		})
-	}
-
 	return c.JSON(http.StatusOK, dto.HandlerResponse{
 		ResponseCode:    "00",
 		ResponseMessage: "",
