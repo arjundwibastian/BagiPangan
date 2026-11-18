@@ -1,5 +1,42 @@
 # BagiPangan progress
 
+## 2026-11-11 — Dedicated host ports after gateway collision
+
+The user-reported gateway startup failed because `127.0.0.1:8081` was already allocated. The owning process/container has not been established; earlier containers can retain requested bindings, and another stack may also own the port. No existing service was stopped. Moved only local gateway host bindings to 18081–18084 and database 55433, keeping container ports and internal service addresses unchanged. Updated Vite's development proxies, their regression expectations and the local guide.
+
+The recovery command recreates only `gateway` (`--no-deps --force-recreate`), preserving all five running app/database containers and their fixtures. Frontend and Compose checks are recorded in the audit. Runtime port availability and browser E2E still need verification; this change does not resolve the agent's independently observed permission restrictions.
+
+## 2026-11-11 — Running containers exposed a local networking defect
+
+User-supplied `compose ps` confirms all four app containers running and PostgreSQL healthy, but shows no host-port mappings. Source and parsed Compose configuration confirm the initial test file attached every container only to an internal network. Docker publishes ports through a default-gateway network, so this setup accepts `ports` yet does not publish them. This was a defect in the added test setup, separate from the agent's recorded permission restrictions; earlier parsing checks could not detect it. See [Docker maintainer explanation](https://github.com/moby/moby/discussions/53256).
+
+Added a local HAProxy gateway on both internal and normal bridges; only it publishes the five loopback listeners. Apps and PostgreSQL remain internal-only. [Local guide](local-testing.md) includes a gateway-only start command that preserves the already-running database and its temporary fixtures. Compose parsing and topology checks are recorded in the audit; proxy runtime and browser E2E still require verification. The user output establishes running images, but a fresh build log has not been reviewed.
+
+## 2026-11-11 — Follow-up after user started the local stack
+
+The user reported running the local Compose command externally. Agent readiness requests to loopback ports 8081–8084 all failed with socket access forbidden; Docker inspection remains denied. Both opt-in PostgreSQL suites were now explicitly attempted against the named loopback fixture databases and **failed during fixture connection**, before schema creation or repository assertions. This does not establish a backend/database application defect or verify container startup.
+
+Vite started on loopback port 3011, but the in-app browser timed out reaching it; an initial browser tab also failed to attach. The temporary Vite process was stopped. Browser E2E remains blocked by session connectivity, and no test accounts or claims were created. The earlier assurance that external stack startup alone would unblock testing was premature: local-network/browser connectivity is also required. External build/start results remain user-reported until their output can be reviewed.
+
+## 2026-11-11 — Image-build and browser-E2E retry
+
+Retried the standalone local stack without reading deployment credentials. Docker Desktop is now running, but the agent session cannot access `npipe:////./pipe/dockerDesktopLinuxEngine` (`permission denied`). The four-service `docker compose --env-file .env.example -f docker-compose.local.yml build` attempt also stopped before compilation because the default Buildx lock is inaccessible. Retrying with `BUILDX_CONFIG` in scratch stopped on a denied Buildx activity-file rename. `up -d --no-build` independently failed on engine access.
+
+**Result:** image builds are blocked by environment permissions, not demonstrated Dockerfile/compiler failures. Database-backed browser E2E could not start; no browser-flow pass or failure was recorded. No application code, ignored settings, production data or Docker security settings were changed. The session needs authorized Docker access before either requested run can complete.
+
+## 2026-11-11 — Repository audit and local improvements
+
+Read both project notes and checked claims against source at `9a6cfca`; working tree was initially clean. [Audit report](audit.md) records exact locations, severity, reproduction steps, confirmed fixes, remaining consistency bugs and unverified operational risks. [Local testing](local-testing.md) describes the new standalone stack; no credentials or deployed data were read.
+
+- Baseline: all five Go modules passed tests/vet; frontend built; lint failed on the three documented state-in-effect errors.
+- Batch 1: local-only dev proxies, HTTP-status-based session expiry, useful gateway errors, owned listing discovery, lint fixes, frontend regression tests and CI checks. Frontend tests/lint/build pass.
+- Batch 2: owner/admin-only user profiles and ownership checks on request-based nearby searches. Denied-access tests pass. Profile tests fail on an isolated snapshot of the original source.
+- Batch 3: bounded cleanup despite caller cancellation, pickup expiry limited by food availability, same-code pickup/completion retries, and repeated-cancellation protection tests. Cleanup and expiry tests fail on the original snapshot and pass with fixes; claim/request tests/vet pass.
+- Batch 4: release preserves cancelled listings and rejects overflow; fully reserved food expires; edits use a server snapshot check; cancellation condition is rechecked in SQL; query cancellation propagates. Added isolated PostgreSQL concurrency/expiry suites and CI configuration. Suites compile and skip locally because no database is running; their runtime behavior is **not yet verified**.
+- Batch 5: nearby UI discards consumed requests/stale results and validates whole quantities; forbidden searches remain visible errors; empty nearby search returns `[]`; finite-number validation and zero-coordinate input tests; Postman negative test now requires 403. Food/request tests/vet and frontend checks pass.
+
+Both Compose files parse with example settings (deployment file uses a non-secret tunnel placeholder). Docker engine, psql and local race support are unavailable; image builds, Caddy runtime validation, PostgreSQL execution, browser E2E and GitHub CI execution were not performed. The audit did not deploy, push, rewrite the architecture or alter existing ignored environment files. High-priority open work: durable reservation identity/recovery and expired-claim reclamation; see report for failure scenarios.
+
 ## 2026-11-09 — Conversation context consolidated
 
 Earlier discussions clarified CI triggers and proposed a way to balance AI-assisted delivery with learning. The [project context](project-context.md#github-ci-understanding) records the CI example and [learning guidance](project-context.md#learning-while-using-ai). No repository workflow inspection, CI change or implementation was performed in those discussions. The developer has not explicitly adopted the proposed learning workflow.

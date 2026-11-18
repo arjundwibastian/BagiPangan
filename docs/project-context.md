@@ -2,6 +2,10 @@
 
 Snapshot of the project discussions through 9 November 2026. Code references were checked against commit `8ba474e`.
 
+**11 November source audit:** this historical snapshot has been checked against `9a6cfca` and the subsequent local changes. See [findings and verification](audit.md) and [isolated test setup](local-testing.md). Development Vite now forces local proxies; a separate disposable Compose stack creates test databases and migrations. CI now includes frontend and opt-in PostgreSQL regressions. My Listings uses donor-owned discovery. Pickup retries can repair request completion; new code expiry is capped by food availability; cleanup has a separate bounded context. Stock release preserves donor cancellation, and fully reserved listings can expire. The original deployment Compose probes and 10-minute updater cadence remain unchanged. Historical deployment, provider, email and browser-testing reports below have not been independently reverified against production.
+
+**Current local ports:** after observed internal-network publication failure and an 8081 allocation conflict, the isolated stack uses a gateway on host HTTP ports **18081–18084** and PostgreSQL **55433**. Vite development proxies match those host ports. Container/service-to-service ports are unchanged. Older port examples below are historical; use [local-testing.md](local-testing.md) for current commands.
+
 ## Project and deployment
 
 BagiPangan began as a Hacktiv8 final project. Donors list available food, recipients search nearby and reserve portions, and donors confirm collection using a pickup code. The project continued after the course as a backend portfolio project. The [README](../README.md) describes the four Go services, their gRPC contracts, PostgreSQL storage, and the React and TypeScript frontend.
