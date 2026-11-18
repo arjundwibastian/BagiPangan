@@ -106,6 +106,10 @@ func (uc *claimUseCase) CreateClaim(
 	}
 
 	claimID := uuid.New()
+	codeExpiresAt := time.Now().Add(15 * time.Minute)
+	if until := listing.GetAvailableUntil(); until != nil && until.IsValid() && until.AsTime().Before(codeExpiresAt) {
+		codeExpiresAt = until.AsTime()
+	}
 
 	claimCode, err := generateClaimCode()
 	if err != nil {
@@ -127,7 +131,7 @@ func (uc *claimUseCase) CreateClaim(
 		RequestID:       input.RequestID,
 		FoodListingID:   input.FoodListingID,
 		ClaimCode:       claimCode,
-		CodeExpiresAt:   time.Now().Add(15 * time.Minute),
+		CodeExpiresAt:   codeExpiresAt,
 		ClaimedQuantity: input.ClaimedQuantity,
 		Status:          domain.StatusWaitingForPickup,
 		CreatedAt:       time.Now(),
@@ -136,8 +140,11 @@ func (uc *claimUseCase) CreateClaim(
 
 	createdClaim, err := uc.repo.Create(ctx, claim)
 	if err != nil {
+		// The HTTP deadline/disconnect must not cancel compensation too.
+		cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
+		defer cancel()
 		_, releaseErr := uc.foodService.ReleaseFoodQuantity(
-			ctx,
+			cleanupCtx,
 			input.FoodListingID.String(),
 			claimID.String(),
 			input.ClaimedQuantity,
@@ -156,10 +163,14 @@ func (uc *claimUseCase) CreateClaim(
 		claimID.String(),
 	)
 	if err != nil {
-		_ = uc.repo.DeleteByID(ctx, claimID)
+		cleanupCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
+		defer cancel()
+		if deleteErr := uc.repo.DeleteByID(cleanupCtx, claimID); deleteErr != nil {
+			log.Printf("failed to delete claim after request update failure claim_id=%s: %v", claimID, deleteErr)
+		}
 
 		_, releaseErr := uc.foodService.ReleaseFoodQuantity(
-			ctx,
+			cleanupCtx,
 			input.FoodListingID.String(),
 			claimID.String(),
 			input.ClaimedQuantity,
