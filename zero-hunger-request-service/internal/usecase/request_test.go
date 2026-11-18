@@ -2,12 +2,23 @@ package usecase
 
 import (
 	"context"
+	"math"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/zero-hunger/request-service/internal/domain"
 )
+
+func TestCreateRejectsNonFiniteNumbers(t *testing.T) {
+	svc := NewRequestService(nil, nil, time.Hour)
+	for _, values := range [][3]float64{{math.NaN(), 0, 1}, {0, math.NaN(), 1}, {0, 0, math.NaN()}, {math.Inf(1), 0, 1}, {0, math.Inf(-1), 1}, {0, 0, math.Inf(1)}} {
+		_, err := svc.Create(context.Background(), CreateInput{UserID: uuid.New(), Latitude: values[0], Longitude: values[1], RadiusKM: values[2]})
+		if err != domain.ErrInvalidInput {
+			t.Fatalf("%v: %v", values, err)
+		}
+	}
+}
 
 type requestRepoMock struct {
 	requests map[uuid.UUID]domain.FoodRequest
@@ -131,6 +142,12 @@ func TestClaimAndCompleteLifecycle(t *testing.T) {
 	}
 	if completed.Status != domain.StatusCompleted {
 		t.Fatalf("status = %s", completed.Status)
+	}
+	if _, err := svc.MarkCompleted(context.Background(), r.Request.ID, claimID); err != nil {
+		t.Fatalf("same-claim completion retry: %v", err)
+	}
+	if _, err := svc.MarkCompleted(context.Background(), r.Request.ID, uuid.New()); err != domain.ErrConflict {
+		t.Fatalf("another claim must not complete this request: %v", err)
 	}
 	if _, err = svc.Cancel(context.Background(), r.Request.ID, r.Request.UserID); err != domain.ErrConflict {
 		t.Fatalf("cancel after completion error = %v", err)
