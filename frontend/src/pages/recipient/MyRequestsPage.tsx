@@ -16,9 +16,6 @@ export function MyRequestsPage({ user }: MyRequestsPageProps) {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError("");
-
     listFoodRequests(user.user_id)
       .then((data) => {
         if (!cancelled) setRequests(data ?? []);
@@ -43,12 +40,19 @@ export function MyRequestsPage({ user }: MyRequestsPageProps) {
     setError("");
     try {
       await cancelFoodRequest(id);
-      setReloadKey((k) => k + 1);
+      refresh();
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Cannot reach the server.",
       );
     }
+  }
+
+  function refresh() {
+    setLoading(true);
+    setError("");
+    setRequests([]);
+    setReloadKey((k) => k + 1);
   }
 
   return (
@@ -62,7 +66,8 @@ export function MyRequestsPage({ user }: MyRequestsPageProps) {
         <button
           type="button"
           className="btn-secondary"
-          onClick={() => setReloadKey((k) => k + 1)}
+          onClick={refresh}
+          disabled={loading}
         >
           Refresh
         </button>

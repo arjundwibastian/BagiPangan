@@ -1,14 +1,16 @@
 import type { ApiResponse } from "../types/auth";
 
-const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+const API_ORIGIN = (import.meta.env?.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 const BASE_URL = `${API_ORIGIN}/api/v1`;
 
 export class ApiError extends Error {
   code: string;
+  status: number;
 
-  constructor(code: string, message: string) {
+  constructor(code: string, message: string, status = 0) {
     super(message);
     this.code = code;
+    this.status = status;
   }
 }
 
@@ -27,15 +29,22 @@ export async function request<T>(
     },
   });
 
-  const body: ApiResponse<T> = await res.json();
+  const body: (Partial<ApiResponse<T>> & { error?: string }) | null =
+    await res.json().catch(() => null);
 
-  if (body.responseCode !== "00") {
-    if (body.responseCode === "41" && token) {
-      localStorage.clear();
+  if (!res.ok || body?.responseCode !== "00") {
+    if (res.status === 401 && token) {
+      for (const key of ["access_token", "refresh_token", "user"]) {
+        localStorage.removeItem(key);
+      }
       window.location.reload();
     }
-    throw new ApiError(body.responseCode, body.responseMessage);
+    throw new ApiError(
+      body?.responseCode ?? String(res.status),
+      body?.responseMessage ?? body?.error ?? `Server returned HTTP ${res.status}. Please try again.`,
+      res.status,
+    );
   }
 
-  return body.responseData;
+  return body.responseData as T;
 }

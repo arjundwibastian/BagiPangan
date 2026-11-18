@@ -72,7 +72,9 @@ export default function App() {
     if (refresh) {
       void logout(refresh).catch(() => undefined);
     }
-    localStorage.clear();
+    for (const key of ["access_token", "refresh_token", "user"]) {
+      localStorage.removeItem(key);
+    }
     setUser(null);
     setAuthView("login");
     setNotice("");

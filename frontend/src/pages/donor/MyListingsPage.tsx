@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { listFoodListings } from "../../api/food";
+import { listOwnFoodListings } from "../../api/food";
 import { ApiError } from "../../api/client";
 import type { FoodListing } from "../../types/food";
 import type { User } from "../../types/auth";
@@ -16,23 +16,14 @@ export function MyListingsPage({ user }: MyListingsPageProps) {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError("");
-
-    listFoodListings()
+    listOwnFoodListings()
       .then((data) => {
         if (cancelled) return;
         setListings(data.filter((item) => item.user_id === user.user_id));
       })
       .catch((err) => {
         if (cancelled) return;
-        if (err instanceof ApiError && err.code === "01") {
-          setListings([]);
-        } else {
-          setError(
-            err instanceof ApiError ? err.message : "Cannot reach the server.",
-          );
-        }
+        setError(err instanceof ApiError ? err.message : "Cannot reach the server.");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -56,7 +47,13 @@ export function MyListingsPage({ user }: MyListingsPageProps) {
         <button
           type="button"
           className="btn-secondary"
-          onClick={() => setReloadKey((k) => k + 1)}
+          onClick={() => {
+            setLoading(true);
+            setError("");
+            setListings([]);
+            setReloadKey((k) => k + 1);
+          }}
+          disabled={loading}
         >
           Refresh
         </button>
